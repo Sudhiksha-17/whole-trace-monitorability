@@ -1,8 +1,8 @@
 # Decisions and caveats
 
 Running record of every decision and caveat for the "Does the reasoning match the work?"
-study, Steps 1 to 2 implemented, Step 3 onward decided but not built. Last updated
-2026-11-15. All numbers are from the current files in `sample/`.
+study. Steps 1 to 3 are implemented (Step 3 views for the pilot split only); later steps
+are decided in part but not built. Last updated 2026-11-15. All numbers are from the current files in `sample/`.
 
 This file contains IDs, counts, tool names and rule descriptions only. No transcript text
 (reasoning, visible text, commands, tool outputs, task descriptions) belongs in git.
@@ -66,18 +66,87 @@ Detailed step rules: [`docs/step_rules.md`](step_rules.md).
   (Nemotron `3070723__honest` step 107), changing that episode's n_eligible from 107 to 106 and
   two of its picks (late_mid 69 -> 68, late 102 -> 101). No other episode or pick changed.
 
-## 4. Decisions for reader views (Step 3, not yet built)
+## 4. Reader views (Step 3)
 
+Built by `scripts/build_views.py` for the pilot split only (240 test steps x 4 views = 960
+views). The script supports `--split main`, but main-split views must not be generated
+until the pilot is done and the pre-registration is frozen.
+
+- View contents (k = the test step's `step_index`; "step k's action" = ALL of step k's tool
+  calls and outputs, not just the target):
+  - T0: task only.
+  - R-only: task + reasoning and visible text of steps 1..k. No tool calls, outputs or
+    harness messages.
+  - T: task + tool calls, outputs and harness messages of steps 1..k-1. No reasoning or
+    visible text anywhere.
+  - T+R: task + steps 1..k-1 in full + step k's reasoning and visible text. Step k's tool
+    calls and outputs are hidden.
+- Earlier steps are included whether or not they are eligible. A step without reasoning
+  contributes its actions to T and T+R and nothing to R-only. Every tool call of an earlier
+  step is shown, not only the first.
 - Visible text is treated as part of the agent's stated reasoning. It appears in R-only and
-  T+R, never in T0 or T. Reasoning and visible text are tagged separately within views, so
-  results can be split by source.
-- Every view includes the identical line "This is step k of the episode", where k is the
-  full-episode `step_index`. The total step count is never shown.
-- No system prompt in any view. Views are built from `messages_json`, not
-  `model_view_messages_json`. Tool outputs are capped at 2,000 tokens each.
-- When step k's action is hidden, ALL of step k's tool calls and outputs are hidden, not just
-  the target.
+  T+R, never in T0 or T. Reasoning and visible text are tagged separately, so results can be
+  split by source.
+- **Task text source:** `main_task_description`. In all 210 episodes it is identical to the
+  first user message in `messages_json`, with no added harness instructions (asserted by the
+  script). Tool-usage and submission instructions live only in the system prompt.
+- No system prompt in any view (asserted: the system prompt is not a substring of any view).
+  Views are built from `messages_json`, not `model_view_messages_json`.
+- **Harness messages:** user messages after the first one. There are 3 in the 210 episodes
+  (Qwen 1, Kimi 2, Nemotron 0), all with identical text, each right after an assistant turn
+  with no tool call, asking the agent to continue or submit. They are environment messages,
+  not agent reasoning or actions, so they are included in T and T+R at their original
+  position (between steps) and excluded from T0 and R-only. A harness message is included
+  only if it occurs before step k's assistant turn. The 2 Kimi harness messages are in pilot
+  episodes but come after every picked step of those episodes, so 0 pilot views contain one.
+- **Output cap:** each tool output (content plus error message) is capped at 2,000 tokens
+  (tiktoken `cl100k_base`). A truncated output keeps its first 2,000 tokens and ends with a
+  new line holding the fixed marker `[output truncated]`. 185 outputs are truncated in the
+  pilot T views and the same 185 in the T+R views (212 view files contain the marker).
+- **Rendering format** (plain text, one format for all views):
+
+  ```text
+  <task>
+  ...
+  </task>
+  <step n="1">
+  <reasoning>
+  ...
+  </reasoning>
+  <visible_text>
+  ...
+  </visible_text>
+  <action tool="bash">
+  ...
+  </action>
+  <output>
+  ...
+  </output>
+  </step>
+  <harness>
+  ...
+  </harness>
+  This is step {k} of the episode.
+  ```
+
+  Each tag and each content block is on its own line. An element appears only if the view
+  includes it and it is non-empty; a `<step>` block is omitted if the view includes nothing
+  from that step. `n` is the full-episode `step_index`. `<harness>` blocks sit between steps
+  where the message occurred. `bash` calls render as their `command` string and `python`
+  calls as their `code` string; every other call (and any call with unexpected argument keys)
+  renders as canonical JSON of its arguments (sorted keys). Content is not escaped.
+- Every view ends with the identical line "This is step k of the episode." The total step
+  count is never shown.
+- Views contain no reader instructions or answer format; the reader prompt is built separately.
 - T+R includes the reasoning at step k.
+- The answer key (`hidden_action.json`: target call plus all of step k's calls) sits next to
+  the views in the gitignored `views/` folder.
+- Rendered view lengths are close to the Step 2 proxy (`sample/view_lengths.csv`): median
+  ratio 1.02 for T and 1.04 for T+R, range 0.89 to 1.14. Views over the proxy (by up to 14%)
+  are driven by tag overhead, about 3 to 7% of the proxy count and larger for Qwen and Nemotron,
+  which have many short steps. Views under the proxy (by up to 11%) come from bash commands
+  rendered as plain strings, while the proxy counted JSON-escaped arguments. Visible text,
+  which the proxy left out of T+R, adds under 1%.
 
 ## 5. Scoring decisions
 
@@ -151,8 +220,14 @@ T+R view tokens (median / p90 / max):
   T+R tokens, against 8.7% (Qwen) and 10.5% (Nemotron). View length should be a covariate.
 - **Data quirks.** Nemotron `3070723__honest` has a submit that returned a tool error (step 107)
   followed by a second submit (step 108); step 107 is now ineligible under the submit-target
-  rule. One Kimi tool output (`13343058__honest`, pilot, step 11) contains NUL bytes; it is real
-  tool output, not a parser bug, and makes text tools treat the hand-check dump as binary.
+  rule. Some tool outputs contain raw binary bytes printed by the agent's commands (real tool
+  output, not a parser bug): NUL bytes appear in 18 outputs across 13 of the 210 episodes
+  (Kimi 4 outputs in 4 episodes, Nemotron 7 in 6, Qwen 7 in 3), often with other control
+  characters and U+FFFD replacement characters. ANSI escape sequences (terminal colours)
+  appear in 111 outputs, mostly Nemotron (91). There are no image or other non-text content
+  blocks; every output is a string. Views keep outputs verbatim, so a few view files contain
+  NUL bytes (text tools may treat them as binary). (An earlier version of this file said only
+  one Kimi output had NUL bytes; that was wrong.)
 - **Data terms.** The dataset is gated and evaluation-only: no training on it, no transcript
   text in git, and only people who have accepted the terms may see transcript text (including
   the `debug/handcheck/` dumps).
@@ -165,6 +240,17 @@ T+R view tokens (median / p90 / max):
 - Leak matching rules write-up (section 6).
 - Replacement rule for episodes with fewer than 4 eligible steps (not needed for the current
   sample).
+- Repeated actions: for some test steps the hidden target command also appears as an earlier
+  action in the episode (the agent repeated itself, for example re-running tests). This is
+  not a construction leak, but it makes prediction from history easy and may inflate T and
+  T+R. Pilot rates (target rendered as in the views, whitespace-normalised, found among the
+  earlier actions in T): 7 of 240 overall; Qwen 2/80 (late_mid 1, late 1), Kimi 0/80,
+  Nemotron 5/80 (early 1, early_mid 1, late_mid 1, late 2). By quarter over all configs:
+  early 1/60, early_mid 1/60, late_mid 2/60, late 3/60. Worth examining later, for example as
+  a split (repeated vs novel actions) or a covariate in the analysis.
+- Whether to sanitise binary bytes (NUL and other control characters) in tool outputs before
+  sending views to the reader; some APIs reject NUL characters. Views currently keep them
+  verbatim.
 - Pre-registration freeze.
 
 Nothing runs on the main set before the pilot and the pre-registration are done.
@@ -179,6 +265,8 @@ hf download AlignmentResearch/telling-fibs-eval-transcripts --repo-type dataset 
 uv run scripts/select_tasks.py     # sample/tasks.csv, episodes.csv, selection_summary.json
 uv run scripts/sample_steps.py     # sample/steps.csv, episode_steps.csv, steps_summary.json
 uv run scripts/view_lengths.py     # sample/view_lengths.csv, view_lengths_summary.json
+uv run scripts/build_views.py      # sample/views_manifest.csv, views_summary.json;
+                                   # views/pilot/ and views/examples/ (gitignored, contain transcript text)
 uv run scripts/dump_handcheck.py   # optional: debug/handcheck/ (gitignored, contains transcript text)
 ```
 
