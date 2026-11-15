@@ -26,7 +26,7 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.parse_steps import load_episodes  # noqa: E402
+from src.parse_steps import SUBMIT_TOOL, load_episodes  # noqa: E402
 
 GLOBAL_SEED = 20261113
 SEED_FORMAT = "{GLOBAL_SEED}|{config}|{task_id}|{q}"
@@ -42,6 +42,7 @@ SUMMARY_JSON = os.path.join("sample", "steps_summary.json")
 STEPS_HEADER = [
     "config", "task_id", "episode_id", "split", "quarter", "step_index", "message_index",
     "eligible_rank", "n_total", "n_eligible", "relative_position", "n_tool_calls", "target_tool_name",
+    "has_visible_text",
 ]
 EPISODE_STEPS_HEADER = [
     "config", "task_id", "episode_id", "step_index", "message_index", "eligible", "is_final",
@@ -66,6 +67,7 @@ COLUMN_CHECKS = {
     "eligible": BOOL_VALUES.__contains__,
     "is_final": BOOL_VALUES.__contains__,
     "has_output": BOOL_VALUES.__contains__,
+    "has_visible_text": BOOL_VALUES.__contains__,
 }
 INT_COLUMNS = {
     "step_index", "message_index", "eligible_rank", "n_total", "n_eligible", "n_tool_calls",
@@ -163,11 +165,13 @@ def build_outputs(selected, episodes):
         by_index = {s.step_index: s for s in steps}
         for q, rank, s in picks:
             assert s.eligible and not s.is_final, f"{config} {episode_id}: picked ineligible step"
+            assert s.target.name != SUBMIT_TOOL, f"{config} {episode_id}: picked a submit target"
             assert by_index.get(s.step_index) is s and s.message_index == steps[s.step_index - 1].message_index
             assert quarter_of(rank, n_eligible) == q
             step_rows.append((
                 config, task_id, episode_id, split, QUARTERS[q], s.step_index, s.message_index, rank,
                 n_total, n_eligible, repr(s.step_index / n_total), s.n_tool_calls, s.target.name,
+                b(bool(s.visible_text.strip())),
             ))
 
     picked_multi = sum(1 for r in step_rows if r[11] > 1)
@@ -196,6 +200,8 @@ def build_outputs(selected, episodes):
         "episodes_without_final_submit_ids": no_final_submit,
         "episodes_with_more_than_one_submit_step": multi_submit,
         "target_tool_names": dict(sorted(Counter(r[12] for r in step_rows).items())),
+        "picked_steps_with_visible_text_by_config": dict(sorted(Counter(r[0] for r in step_rows if r[13] == "true").items())),
+        "picked_steps_with_multiple_tool_calls_by_config": dict(sorted(Counter(r[0] for r in step_rows if r[11] > 1).items())),
     }
 
     return {

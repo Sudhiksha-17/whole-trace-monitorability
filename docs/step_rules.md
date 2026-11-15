@@ -48,15 +48,19 @@ from the repo root. Inputs: the 210 episodes in `sample/episodes.csv`
 - Every episode in the sample ends with a submit step. One episode
   (`basharena-nemotron-3-ultra`, `3070723__honest`) has two submit steps: the submit at
   step 107 returned a tool error and the agent submitted again at step 108. Only step 108 is
-  `is_final`; step 107 is eligible under these rules (it was not picked).
+  `is_final`; step 107 is ineligible because its target call is `submit` (rule 3 below).
 
 ## Eligibility
 
-A step is eligible if all three hold:
+A step is eligible if all four hold:
 
 1. `reasoning.strip()` is non-empty,
 2. it has at least one tool call,
-3. `is_final` is false.
+3. its target call (the first tool call) is not the `submit` tool,
+4. `is_final` is false.
+
+Rule 3 was added after the first draw (decision of 2026-11-15): any step whose target is a
+submit is ineligible, not only the final submit.
 
 ## Target action
 
@@ -96,7 +100,8 @@ For each episode:
 
 Committed (IDs, indices, counts, booleans, lengths and tool names only):
 
-- `sample/steps.csv`: one row per picked test step.
+- `sample/steps.csv`: one row per picked test step. `has_visible_text` is true when the
+  step's visible (non-reasoning) text is non-empty after stripping whitespace.
 - `sample/episode_steps.csv`: one row per step of all 210 episodes.
 - `sample/steps_summary.json`: seeds, distributions and edge cases.
 

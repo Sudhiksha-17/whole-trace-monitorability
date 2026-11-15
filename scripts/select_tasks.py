@@ -41,7 +41,7 @@ CONFIGS = [
 ]
 HONEST_ARM = "honest"
 # Only metadata columns. Never add text columns (messages_json, descriptions, ...).
-COLUMNS = ["episode_id", "arm", "task_id", "main_task_score", "main_task_success"]
+COLUMNS = ["episode_id", "arm", "task_id", "main_task_score", "main_task_success", "attempt", "run"]
 
 OUT_DIR = "sample"
 TASKS_CSV = os.path.join(OUT_DIR, "tasks.csv")
@@ -51,6 +51,7 @@ SUMMARY_JSON = os.path.join(OUT_DIR, "selection_summary.json")
 # Guards that the outputs hold identifiers and numbers only.
 TASK_ID_RE = re.compile(r"^[0-9]+$")
 EPISODE_ID_RE = re.compile(r"^[0-9]+__[a-z0-9_]+$")
+RUN_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*$")
 
 
 def load_honest(config):
@@ -121,13 +122,17 @@ def build_outputs():
                 row["episode_id"],
                 repr(float(row["main_task_score"])),
                 row["main_task_success"],
+                int(row["attempt"]),
+                row["run"],
             ))
 
     assert len(episode_rows) == len(CONFIGS) * (N_MAIN + N_PILOT)
-    for cfg, task_id, _, episode_id, _, success in episode_rows:
+    for cfg, task_id, _, episode_id, _, success, attempt, run in episode_rows:
         assert TASK_ID_RE.match(task_id), f"unexpected task_id format: {task_id!r}"
         assert EPISODE_ID_RE.match(episode_id), f"unexpected episode_id format: {episode_id!r}"
         assert success in ("C", "I"), f"unexpected main_task_success: {success!r}"
+        assert attempt >= 1, f"unexpected attempt: {attempt!r}"
+        assert RUN_RE.match(run), f"unexpected run format: {run!r}"
     assert len({(r[0], r[3]) for r in episode_rows}) == len(episode_rows), "episode ids repeat"
 
     summary = {
@@ -149,7 +154,7 @@ def build_outputs():
     return {
         TASKS_CSV: to_csv(["task_id", "split"], task_rows),
         EPISODES_CSV: to_csv(
-            ["config", "task_id", "split", "episode_id", "main_task_score", "main_task_success"],
+            ["config", "task_id", "split", "episode_id", "main_task_score", "main_task_success", "attempt", "run"],
             episode_rows,
         ),
         SUMMARY_JSON: json.dumps(summary, indent=2, sort_keys=True) + "\n",

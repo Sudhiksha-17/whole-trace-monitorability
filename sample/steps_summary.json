@@ -46,6 +46,16 @@
     "pilot|basharena-nemotron-3-ultra": 80,
     "pilot|basharena-qwen3.5-397b": 80
   },
+  "picked_steps_with_multiple_tool_calls_by_config": {
+    "basharena-kimi-k3": 95,
+    "basharena-nemotron-3-ultra": 7,
+    "basharena-qwen3.5-397b": 24
+  },
+  "picked_steps_with_visible_text_by_config": {
+    "basharena-kimi-k3": 187,
+    "basharena-nemotron-3-ultra": 9,
+    "basharena-qwen3.5-397b": 52
+  },
   "quantile_method": "statistics.quantiles(n=4, method='inclusive')",
   "quarter_formula": "q = floor(4 * eligible_rank / n_eligible), eligible_rank 0-indexed",
   "seed_derivation": "int(hashlib.sha256(seed_str.encode()).hexdigest(), 16) -> random.Random(seed).choice(steps_in_quarter)",

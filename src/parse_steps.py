@@ -64,7 +64,13 @@ class Step:
 
     @property
     def eligible(self) -> bool:
-        return bool(self.reasoning.strip()) and self.n_tool_calls > 0 and not self.is_final
+        """Non-empty reasoning, at least one tool call, target is not submit, not the final step."""
+        return (
+            bool(self.reasoning.strip())
+            and self.n_tool_calls > 0
+            and self.target.name != SUBMIT_TOOL
+            and not self.is_final
+        )
 
     @property
     def target(self) -> ToolCall | None:
