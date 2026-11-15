@@ -1,0 +1,396 @@
+{
+  "extraction_status_by_config": {
+    "basharena-kimi-k3": {
+      "ambiguous": 25,
+      "no_target": 1,
+      "ok": 54
+    },
+    "basharena-nemotron-3-ultra": {
+      "ambiguous": 5,
+      "no_target": 11,
+      "ok": 64
+    },
+    "basharena-qwen3.5-397b": {
+      "ambiguous": 13,
+      "no_target": 10,
+      "ok": 57
+    }
+  },
+  "n_test_steps": 240,
+  "parser": "shlex (Python standard library), with a quote-aware splitter for &&, ||, ;, |, & and newlines",
+  "rates": {
+    "all|all": {
+      "basename_only_mention": 25,
+      "command_core_leak": 2,
+      "command_leak": 1,
+      "command_leak_reasoning": 1,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 1,
+        "none": 211,
+        "target_only": 28
+      },
+      "n": 240,
+      "target_in_earlier_reasoning": 119,
+      "target_leak": 28,
+      "target_leak_reasoning": 27,
+      "target_leak_visible": 4
+    },
+    "all|early": {
+      "basename_only_mention": 9,
+      "command_core_leak": 1,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 54,
+        "target_only": 6
+      },
+      "n": 60,
+      "target_in_earlier_reasoning": 23,
+      "target_leak": 6,
+      "target_leak_reasoning": 5,
+      "target_leak_visible": 1
+    },
+    "all|early_mid": {
+      "basename_only_mention": 7,
+      "command_core_leak": 1,
+      "command_leak": 1,
+      "command_leak_reasoning": 1,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 1,
+        "none": 48,
+        "target_only": 11
+      },
+      "n": 60,
+      "target_in_earlier_reasoning": 31,
+      "target_leak": 11,
+      "target_leak_reasoning": 11,
+      "target_leak_visible": 2
+    },
+    "all|late": {
+      "basename_only_mention": 5,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 52,
+        "target_only": 8
+      },
+      "n": 60,
+      "target_in_earlier_reasoning": 37,
+      "target_leak": 8,
+      "target_leak_reasoning": 8,
+      "target_leak_visible": 1
+    },
+    "all|late_mid": {
+      "basename_only_mention": 4,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 57,
+        "target_only": 3
+      },
+      "n": 60,
+      "target_in_earlier_reasoning": 28,
+      "target_leak": 3,
+      "target_leak_reasoning": 3,
+      "target_leak_visible": 0
+    },
+    "basharena-kimi-k3|all": {
+      "basename_only_mention": 8,
+      "command_core_leak": 1,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 57,
+        "target_only": 23
+      },
+      "n": 80,
+      "target_in_earlier_reasoning": 55,
+      "target_leak": 23,
+      "target_leak_reasoning": 22,
+      "target_leak_visible": 4
+    },
+    "basharena-kimi-k3|early": {
+      "basename_only_mention": 3,
+      "command_core_leak": 1,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 15,
+        "target_only": 5
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 8,
+      "target_leak": 5,
+      "target_leak_reasoning": 4,
+      "target_leak_visible": 1
+    },
+    "basharena-kimi-k3|early_mid": {
+      "basename_only_mention": 2,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 11,
+        "target_only": 9
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 16,
+      "target_leak": 9,
+      "target_leak_reasoning": 9,
+      "target_leak_visible": 2
+    },
+    "basharena-kimi-k3|late": {
+      "basename_only_mention": 2,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 14,
+        "target_only": 6
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 17,
+      "target_leak": 6,
+      "target_leak_reasoning": 6,
+      "target_leak_visible": 1
+    },
+    "basharena-kimi-k3|late_mid": {
+      "basename_only_mention": 1,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 17,
+        "target_only": 3
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 14,
+      "target_leak": 3,
+      "target_leak_reasoning": 3,
+      "target_leak_visible": 0
+    },
+    "basharena-nemotron-3-ultra|all": {
+      "basename_only_mention": 11,
+      "command_core_leak": 1,
+      "command_leak": 1,
+      "command_leak_reasoning": 1,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 1,
+        "none": 77,
+        "target_only": 2
+      },
+      "n": 80,
+      "target_in_earlier_reasoning": 33,
+      "target_leak": 2,
+      "target_leak_reasoning": 2,
+      "target_leak_visible": 0
+    },
+    "basharena-nemotron-3-ultra|early": {
+      "basename_only_mention": 3,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 20,
+        "target_only": 0
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 7,
+      "target_leak": 0,
+      "target_leak_reasoning": 0,
+      "target_leak_visible": 0
+    },
+    "basharena-nemotron-3-ultra|early_mid": {
+      "basename_only_mention": 5,
+      "command_core_leak": 1,
+      "command_leak": 1,
+      "command_leak_reasoning": 1,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 1,
+        "none": 19,
+        "target_only": 0
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 6,
+      "target_leak": 0,
+      "target_leak_reasoning": 0,
+      "target_leak_visible": 0
+    },
+    "basharena-nemotron-3-ultra|late": {
+      "basename_only_mention": 2,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 18,
+        "target_only": 2
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 13,
+      "target_leak": 2,
+      "target_leak_reasoning": 2,
+      "target_leak_visible": 0
+    },
+    "basharena-nemotron-3-ultra|late_mid": {
+      "basename_only_mention": 1,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 20,
+        "target_only": 0
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 7,
+      "target_leak": 0,
+      "target_leak_reasoning": 0,
+      "target_leak_visible": 0
+    },
+    "basharena-qwen3.5-397b|all": {
+      "basename_only_mention": 6,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 77,
+        "target_only": 3
+      },
+      "n": 80,
+      "target_in_earlier_reasoning": 31,
+      "target_leak": 3,
+      "target_leak_reasoning": 3,
+      "target_leak_visible": 0
+    },
+    "basharena-qwen3.5-397b|early": {
+      "basename_only_mention": 3,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 19,
+        "target_only": 1
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 8,
+      "target_leak": 1,
+      "target_leak_reasoning": 1,
+      "target_leak_visible": 0
+    },
+    "basharena-qwen3.5-397b|early_mid": {
+      "basename_only_mention": 0,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 18,
+        "target_only": 2
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 9,
+      "target_leak": 2,
+      "target_leak_reasoning": 2,
+      "target_leak_visible": 0
+    },
+    "basharena-qwen3.5-397b|late": {
+      "basename_only_mention": 1,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 20,
+        "target_only": 0
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 7,
+      "target_leak": 0,
+      "target_leak_reasoning": 0,
+      "target_leak_visible": 0
+    },
+    "basharena-qwen3.5-397b|late_mid": {
+      "basename_only_mention": 2,
+      "command_core_leak": 0,
+      "command_leak": 0,
+      "command_leak_reasoning": 0,
+      "command_leak_visible": 0,
+      "leak_category": {
+        "command": 0,
+        "none": 20,
+        "target_only": 0
+      },
+      "n": 20,
+      "target_in_earlier_reasoning": 7,
+      "target_leak": 0,
+      "target_leak_reasoning": 0,
+      "target_leak_visible": 0
+    }
+  },
+  "split": "pilot",
+  "target_kinds_overall": {
+    "host": 31,
+    "package": 2,
+    "path": 195
+  },
+  "validation": {
+    "1": {
+      "basename_only_mention": {
+        "fp": 3,
+        "tp": 17
+      },
+      "command": {
+        "tp": 1
+      },
+      "recall_none": {
+        "miss": 2,
+        "ok": 28
+      },
+      "target_in_earlier_reasoning": {
+        "tp": 20
+      },
+      "target_only": {
+        "fp": 1,
+        "tp": 19
+      }
+    },
+    "2": {
+      "target_only": {
+        "tp": 2
+      }
+    }
+  }
+}

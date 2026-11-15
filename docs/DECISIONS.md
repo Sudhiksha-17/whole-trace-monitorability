@@ -200,14 +200,42 @@ until the pilot is done and the pre-registration is frozen.
   Kimi 95 of 280, Qwen 24 of 280, Nemotron 7 of 280 (126 total). Over all steps of the 210
   episodes: Kimi 888, Qwen 594, Nemotron 250.
 
-## 6. Leakage flags (planned, before any reader runs)
+## 6. Leakage flags (pilot implemented; to be frozen before any reader runs)
 
+Full rules, synthetic examples, limitations and validation: [`docs/LEAK_RULES.md`](LEAK_RULES.md).
+Code: `src/leak_rules.py`, `scripts/leak_flags.py` (pilot only; `--split main` is not to be
+run until the rules are frozen in the pre-registration).
+
+- Targets come from the target call (first tool call of step k): the `text_editor` path, or
+  the paths, hosts, packages and service names parsed from a `bash` command (`shlex` with a
+  quote-aware splitter; heredoc bodies not parsed). Each step has an extraction status:
+  `ok`, `ambiguous` (loops, `eval`, command substitution, inline code, `python` tool) or
+  `no_target`.
 - `command_leak` and `target_leak` are computed on step k's reasoning and on step k's visible
-  text, separately for each source.
-- `target_in_earlier_reasoning` is an extra flag.
-- Results are split into no leak / target only / command. No steps are dropped.
-- Matching rules (normalisation, full path vs basename, target extraction from `bash` and
-  `text_editor` calls) will be documented separately.
+  text, separately for each source, then combined.
+- A command leak needs the whole normalised command. A path target counts if the full path,
+  a suffix of at least 2 components, or its resolved/original relative form appears at token
+  boundaries. The basename alone does not count (`basename_only_mention` is a diagnostic).
+  Hosts, packages and service names match case-insensitively.
+- `target_in_earlier_reasoning` applies the target rules to the reasoning and visible text of
+  steps 1..k-1. `command_core_leak` (first non-`cd` simple command) is a diagnostic.
+- `leak_category`: `command` > `target_only` > `none`. No steps are dropped.
+- Pilot results (240 steps):
+
+| Config | command | target_only | none | basename only | target in earlier reasoning |
+|---|---|---|---|---|---|
+| Qwen | 0 | 3 | 77 | 6 | 31 |
+| Kimi | 0 | 23 | 57 | 8 | 55 |
+| Nemotron | 1 | 2 | 77 | 11 | 33 |
+| All | 1 (0.4%) | 28 (11.7%) | 211 | 25 (10.4%) | 119 (49.6%) |
+
+  Kimi's target leaks are mostly in its reasoning (19 reasoning only, 3 both, 1 visible text
+  only), so visible text adds little to Kimi's leak rate. Extraction status: ok 175,
+  ambiguous 43 (Kimi 25), no_target 22.
+- Validation: `target_only` precision 19/20, `command` 1/1, `target_in_earlier_reasoning`
+  20/20; recall check 28/30 (misses: a case mismatch, fixed; a compound command named in
+  parts, a documented limitation). 17 of 20 basename-only mentions did refer to the target, so
+  the basename rule is conservative.
 
 ## 7. Context length
 
@@ -282,7 +310,10 @@ T+R view tokens (median / p90 / max):
 - Retry sensitivity plan (section 8): proposed, awaiting confirmation.
 - Whether the reader runs on SHADE-Arena early steps for the self-consistency bound.
 - Reader model choice, and recount of the longest views with its real tokenizer.
-- Leak matching rules write-up (section 6).
+- ~~Leak matching rules write-up (section 6).~~ Done 2026-11-15: `docs/LEAK_RULES.md`. To be
+  reviewed by Sudhi and frozen in the pre-registration. Open sub-question: whether to also
+  report results with basename-only mentions counted as target leaks, since most of them
+  refer to the target.
 - Replacement rule for episodes with fewer than 4 eligible steps (not needed for the current
   sample).
 - Repeated actions: for some test steps the hidden target command also appears as an earlier
@@ -319,6 +350,8 @@ uv run scripts/sample_steps.py     # sample/steps.csv, episode_steps.csv, steps_
 uv run scripts/view_lengths.py     # sample/view_lengths.csv, view_lengths_summary.json
 uv run scripts/build_views.py      # sample/views_manifest.csv, views_summary.json;
                                    # views/pilot/ and views/examples/ (gitignored, contain transcript text)
+uv run scripts/leak_flags.py       # sample/leak_flags.csv, leak_flags_summary.json (reads leak_validation.csv);
+                                   # views/pilot/.../targets.json and debug/leaks/ (gitignored)
 uv run scripts/dump_handcheck.py   # optional: debug/handcheck/ (gitignored, contains transcript text)
 ```
 
