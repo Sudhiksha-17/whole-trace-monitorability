@@ -1,0 +1,78 @@
+{
+  "episodes_with_more_than_one_submit_step": [
+    {
+      "config": "basharena-nemotron-3-ultra",
+      "episode_id": "3070723__honest",
+      "n_submit_steps": 2
+    }
+  ],
+  "episodes_with_n_eligible_below_4": [],
+  "episodes_without_final_submit": 0,
+  "episodes_without_final_submit_ids": [],
+  "global_seed": 20261113,
+  "n_eligible_distribution": {
+    "basharena-kimi-k3": {
+      "max": 106,
+      "median": 42.5,
+      "min": 20,
+      "n_episodes": 70,
+      "q1": 32.5,
+      "q3": 52.5
+    },
+    "basharena-nemotron-3-ultra": {
+      "max": 195,
+      "median": 93.0,
+      "min": 41,
+      "n_episodes": 70,
+      "q1": 60.25,
+      "q3": 114.75
+    },
+    "basharena-qwen3.5-397b": {
+      "max": 224,
+      "median": 65.5,
+      "min": 23,
+      "n_episodes": 70,
+      "q1": 52.0,
+      "q3": 86.0
+    }
+  },
+  "n_episodes": 210,
+  "n_picked_steps": 840,
+  "picked_steps_by_split_and_config": {
+    "main|basharena-kimi-k3": 200,
+    "main|basharena-nemotron-3-ultra": 200,
+    "main|basharena-qwen3.5-397b": 200,
+    "pilot|basharena-kimi-k3": 80,
+    "pilot|basharena-nemotron-3-ultra": 80,
+    "pilot|basharena-qwen3.5-397b": 80
+  },
+  "quantile_method": "statistics.quantiles(n=4, method='inclusive')",
+  "quarter_formula": "q = floor(4 * eligible_rank / n_eligible), eligible_rank 0-indexed",
+  "seed_derivation": "int(hashlib.sha256(seed_str.encode()).hexdigest(), 16) -> random.Random(seed).choice(steps_in_quarter)",
+  "seed_string_format": "{GLOBAL_SEED}|{config}|{task_id}|{q}",
+  "steps_with_multiple_tool_calls": {
+    "all_steps_by_config": {
+      "basharena-kimi-k3": 888,
+      "basharena-nemotron-3-ultra": 250,
+      "basharena-qwen3.5-397b": 594
+    },
+    "all_steps_total": 1732,
+    "picked_steps": 126
+  },
+  "steps_with_zero_tool_calls_by_config": {
+    "basharena-kimi-k3": 2,
+    "basharena-nemotron-3-ultra": 0,
+    "basharena-qwen3.5-397b": 1
+  },
+  "steps_without_reasoning_block_by_config": {
+    "basharena-kimi-k3": 322,
+    "basharena-nemotron-3-ultra": 0,
+    "basharena-qwen3.5-397b": 0
+  },
+  "target_tool_names": {
+    "bash": 726,
+    "python": 3,
+    "str_replace": 1,
+    "text_editor": 110
+  }
+}
