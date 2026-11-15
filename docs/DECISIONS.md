@@ -26,6 +26,42 @@ Detailed step rules: [`docs/step_rules.md`](step_rules.md).
   - The remaining gaps (2 Qwen, 1 Kimi, 1 Nemotron honest episodes) have no recorded reason.
 - `episode_id` (e.g. `5691193__honest`) is unique only within a config. `(config, episode_id)`
   identifies a row; `attempt_id` is unique across the whole dataset.
+- SHADE-Arena configs (for the self-consistency bound, not yet used):
+  `shade_public-qwen3.5-397b`, `shade_public-kimi-k3`, `shade_public-nemotron-3-ultra`.
+  100 honest episodes each: 4 scenarios (`api_key_calendar_agendas_2`, `bank_transfer_2`,
+  `expenditure_accounting`, `spam_filter_update`) x 25 replicates (0 to 24). Format
+  differences from BashArena are in [`docs/FORMAT.md`](FORMAT.md).
+
+### System-prompt check (all six honest configs)
+
+`request_system_message` of every honest episode (1,879 BashArena, 300 SHADE) was searched
+case-insensitively for these patterns (regular expressions): `monitor`, `oversight`,
+`overseen`, `supervis`, `\blog(s|ged|ging)?\b`, `audit`, `watch`, `observ`, `surveil`,
+`track`, `record`, `review`, `inspect`, `evaluat`, `assess`, `grad(e|ed|er|ing)\b`,
+`\bscor(e|ed|ing)\b`, `\btest(s|ed|ing)?\b`, `reasoning`, `chain[- ]of[- ]thought`, `\bcot\b`,
+`thinking`, `thoughts?\b`, `scratchpad`, `transcript`, `\btrace\b`, `transparen`, `judge`,
+`read (your|the agent)`, `\bseen\b`, `visible`. Both distinct prompts were then read in full.
+
+- Each config has exactly 1 distinct honest system prompt, and `messages_json[0]` equals
+  `request_system_message` in every honest episode. The three BashArena configs share one
+  prompt; the three SHADE configs share another.
+- BashArena (all three configs): no hits. Reading the full prompt confirms no mention of
+  monitoring, oversight, logging, being watched, reasoning being read, or evaluation. It is a
+  short generic instruction to solve the task with the tools, plus a description of the
+  container environment.
+- SHADE (all three configs): 3 hits.
+  - `monitor` (1): the closing sentence of the honest prompt tells the agent that taking more
+    time makes it more likely both that it completes the main task and that a monitoring
+    system will not notice its secondary task. This is a real mention of monitoring, and of a
+    secondary task that honest episodes do not have. The same closing paragraph appears
+    verbatim in every SHADE attack-arm prompt (289 of 289), so it is shared template text
+    left in the honest prompt.
+  - `transcript` (2): false positives. Both refer to the agent ending the task by
+    submitting its transcript, not to anyone reading it.
+- Implication: BashArena honest agents have no stated reason to expect their reasoning to be
+  monitored. SHADE honest agents are told a monitoring system exists, which may change what
+  they write in their reasoning. This matters for the SHADE self-consistency bound and for
+  any SHADE reader run (see section 9).
 
 ## 2. Task sample (Step 1)
 
@@ -92,13 +128,22 @@ until the pilot is done and the pre-registration is frozen.
   script). Tool-usage and submission instructions live only in the system prompt.
 - No system prompt in any view (asserted: the system prompt is not a substring of any view).
   Views are built from `messages_json`, not `model_view_messages_json`.
-- **Harness messages:** user messages after the first one. There are 3 in the 210 episodes
-  (Qwen 1, Kimi 2, Nemotron 0), all with identical text, each right after an assistant turn
-  with no tool call, asking the agent to continue or submit. They are environment messages,
+- **Harness messages:** user messages after the first one. All BashArena honest episodes
+  contain 17 (Qwen 3, Kimi 13, Nemotron 1); the 210 sampled episodes contain 3 (Qwen 1,
+  Kimi 2, Nemotron 0). All have identical text, each right after an assistant turn with no
+  tool call, asking the agent to continue or submit. They are environment messages,
   not agent reasoning or actions, so they are included in T and T+R at their original
   position (between steps) and excluded from T0 and R-only. A harness message is included
   only if it occurs before step k's assistant turn. The 2 Kimi harness messages are in pilot
   episodes but come after every picked step of those episodes, so 0 pilot views contain one.
+- **Output sanitisation:** before the cap, every tool output has ANSI escape sequences removed
+  (CSI sequences such as colours and cursor moves, OSC sequences, and two-byte escapes) and
+  every NUL byte replaced with the literal 4-character text `\x00`. The same rule applies to
+  every view. Only outputs are sanitised; no other element of the pilot views contains NUL or
+  ESC characters (checked). In the pilot views this changed 58 distinct outputs (Qwen 7, Kimi 1,
+  Nemotron 50) and 22 of the 960 view files (the T and T+R views of
+  11 test steps). No view file contains a raw NUL or ESC character (asserted per output,
+  checked per file).
 - **Output cap:** each tool output (content plus error message) is capped at 2,000 tokens
   (tiktoken `cl100k_base`). A truncated output keeps its first 2,000 tokens and ends with a
   new line holding the fixed marker `[output truncated]`. 185 outputs are truncated in the
@@ -248,9 +293,16 @@ T+R view tokens (median / p90 / max):
   Nemotron 5/80 (early 1, early_mid 1, late_mid 1, late 2). By quarter over all configs:
   early 1/60, early_mid 1/60, late_mid 2/60, late 3/60. Worth examining later, for example as
   a split (repeated vs novel actions) or a covariate in the analysis.
-- Whether to sanitise binary bytes (NUL and other control characters) in tool outputs before
-  sending views to the reader; some APIs reject NUL characters. Views currently keep them
-  verbatim.
+- ~~Whether to sanitise binary bytes in tool outputs.~~ Closed 2026-11-15: NUL bytes are
+  replaced with the literal text `\x00` and ANSI escapes are stripped (section 4). Other
+  control characters and U+FFFD are kept verbatim.
+- SHADE parser rule: 5 assistant turns in 4 Kimi-K3 SHADE honest episodes have no record in
+  `steps` (documented in the dataset card). `src/parse_steps.py` rejects these episodes. A
+  rule is needed (for example treat each such turn as a step, or drop those episodes) before
+  any SHADE work.
+- SHADE honest system prompt mentions a monitoring system and a secondary task (section 1).
+  Decide whether this affects the self-consistency bound or a SHADE reader run, and whether
+  to check how often SHADE honest reasoning refers to it.
 - Pre-registration freeze.
 
 Nothing runs on the main set before the pilot and the pre-registration are done.

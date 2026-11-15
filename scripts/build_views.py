@@ -87,6 +87,7 @@ class Element:
     text: str
     tool: str | None = None
     truncated: bool = False
+    sanitised: bool = False
 
     @property
     def key(self):
@@ -101,6 +102,17 @@ def render_call(call):
     if call.name == "python" and set(args) == {"code"} and isinstance(args["code"], str):
         return args["code"]
     return json.dumps(args, sort_keys=True, ensure_ascii=False)
+
+
+# Output sanitisation, applied to every tool output before the cap, identically in all views.
+# ANSI escapes: CSI (ESC [ ... final byte), OSC (ESC ] ... BEL or ESC \), and two-byte escapes.
+ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[@-Z\\-_]")
+NUL_REPLACEMENT = "\\x00"  # the 4 literal characters backslash, x, 0, 0
+
+
+def sanitise_output(text):
+    """Strip ANSI escape sequences and replace NUL bytes with the literal text \\x00."""
+    return ANSI_RE.sub("", text).replace("\x00", NUL_REPLACEMENT)
 
 
 def cap_output(text):
@@ -128,10 +140,12 @@ def episode_elements(episode, messages, task_text):
         for j, (call, out) in enumerate(zip(s.tool_calls, s.outputs)):
             elements.append(Element(ACTION, s.step_index, s.message_index, 2 + 2 * j, render_call(call), tool=call.name))
             if out is not None:
-                text = output_text(out)
+                raw_text = output_text(out)
+                text = sanitise_output(raw_text)
                 if text:
                     capped, truncated = cap_output(text)
-                    elements.append(Element(OUTPUT, s.step_index, s.message_index, 3 + 2 * j, capped, truncated=truncated))
+                    elements.append(Element(OUTPUT, s.step_index, s.message_index, 3 + 2 * j, capped,
+                                            truncated=truncated, sanitised=text != raw_text))
     # Harness messages: user messages after the first one. They belong to the step of
     # the assistant turn that precedes them, and sit after that step's block.
     step_of_msg = {s.message_index: s.step_index for s in episode.steps}
@@ -199,6 +213,8 @@ def render(chosen, k):
 def check_view(view, chosen, k, step_k_message_index, t_keys, agent_keys_upto_k):
     kinds = {e.kind for e in chosen}
     for e in chosen:
+        if e.kind == OUTPUT:
+            assert "\x00" not in e.text and "\x1b" not in e.text, f"{view}: unsanitised output"
         assert not (e.step == k and e.kind in (ACTION, OUTPUT)), f"{view}: step k action/output present"
         assert not (e.kind == HARNESS and e.message_index > step_k_message_index), f"{view}: harness after step k"
         assert e.step is None or e.step <= k, f"{view}: element from after step k"
@@ -272,6 +288,7 @@ def main():
     shutil.rmtree(out_root, ignore_errors=True)
     manifest, records = [], []
     harness_total = Counter()
+    sanitised_outputs = set()  # (config, episode_id, element key) of sanitised outputs shown in any view
 
     for config in sorted({p["config"] for p in picks}):
         cp = [p for p in picks if p["config"] == config]
@@ -318,6 +335,7 @@ def main():
 
             for v in VIEWS:
                 c = chosen[v]
+                sanitised_outputs.update((config, p["episode_id"], e.key) for e in c if e.sanitised)
                 manifest.append((
                     config, p["task_id"], split, p["quarter"], k, v, n_tokens(texts[v]),
                     len({e.step for e in c if e.step is not None and e.kind != HARNESS}),
@@ -363,6 +381,8 @@ def main():
         "n_test_steps": len(records),
         "n_views": len(manifest),
         "n_outputs_truncated_by_view": {v: sum(m[8] for m in manifest if m[5] == v) for v in VIEWS},
+        "output_sanitisation": "ANSI escape sequences removed; NUL bytes replaced with the literal text \\x00; applied before the cap",
+        "n_distinct_sanitised_outputs_shown_by_config": dict(sorted(Counter(c for c, _, _ in sanitised_outputs).items())),
         "n_harness_messages_in_episodes_by_config": dict(sorted(harness_total.items())),
         "n_views_with_harness_message_by_view": {v: sum(m[9] > 0 for m in manifest if m[5] == v) for v in VIEWS},
         "repeated_target_action": {k: {"repeated": v[0], "n": v[1]} for k, v in sorted(rep.items())},

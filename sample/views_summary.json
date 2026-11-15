@@ -1,4 +1,9 @@
 {
+  "n_distinct_sanitised_outputs_shown_by_config": {
+    "basharena-kimi-k3": 1,
+    "basharena-nemotron-3-ultra": 50,
+    "basharena-qwen3.5-397b": 7
+  },
   "n_harness_messages_in_episodes_by_config": {
     "basharena-kimi-k3": 2,
     "basharena-nemotron-3-ultra": 0,
@@ -19,6 +24,7 @@
     "T_plus_R": 0
   },
   "output_cap_tokens": 2000,
+  "output_sanitisation": "ANSI escape sequences removed; NUL bytes replaced with the literal text \\x00; applied before the cap",
   "repeated_target_action": {
     "all|all": {
       "n": 240,
@@ -105,12 +111,12 @@
   "token_ratio_view_over_proxy": {
     "T": {
       "max": 1.1206,
-      "median": 1.0215,
+      "median": 1.0214,
       "min": 0.8873
     },
     "T_plus_R": {
       "max": 1.1436,
-      "median": 1.0369,
+      "median": 1.0365,
       "min": 0.9121
     }
   },
