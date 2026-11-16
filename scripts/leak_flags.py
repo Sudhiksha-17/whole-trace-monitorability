@@ -11,12 +11,12 @@ command or a target, plus diagnostics.
 Committed outputs (IDs, booleans, labels, counts only):
   sample/leak_flags.csv, sample/leak_flags_summary.json
 Gitignored outputs (contain transcript text):
-  views/{split}/{config}/{task_id}/step_{k}/targets.json
+  targets/{split}/{config}/{task_id}/step_{k}.json   (extracted targets; rebuilt on each run)
   debug/leaks/{split}/extraction_handcheck.txt, debug/leaks/{split}/validation.txt
 Manual validation verdicts are read from sample/leak_validation.csv if present.
 
 Ground rule: pilot only until the rules are frozen in the pre-registration.
-Run after scripts/build_views.py (which rebuilds views/{split}/):
+Independent of scripts/build_views.py (writes nothing under views/), so either can be rerun:
     uv run scripts/leak_flags.py
 """
 
@@ -27,6 +27,7 @@ import io
 import json
 import os
 import random
+import shutil
 import sys
 from collections import Counter, defaultdict
 
@@ -128,6 +129,9 @@ def main():
     with open(STEPS_CSV, newline="") as f:
         picks = [r for r in csv.DictReader(f) if r["split"] == split]
 
+    targets_root = os.path.join("targets", split)
+    if os.path.isdir(targets_root):
+        shutil.rmtree(targets_root)
     rows, details = [], []
     for config in sorted({p["config"] for p in picks}):
         cp = [p for p in picks if p["config"] == config]
@@ -146,13 +150,13 @@ def main():
                 **flags, "leak_category": category,
             })
             details.append({"row": rows[-1], "call": step_k.target, "ex": ex, "m": m, "texts": texts})
-            step_dir = os.path.join("views", split, config, p["task_id"], f"step_{k}")
-            if os.path.isdir(step_dir):
-                with open(os.path.join(step_dir, "targets.json"), "w", encoding="utf-8") as f:
-                    json.dump({"extraction_status": ex.status, "reasons": ex.reasons,
-                               "targets": [{"kind": t.kind, "value": t.value, "origin": t.origin} for t in ex.targets]},
-                              f, indent=2, sort_keys=True, ensure_ascii=False)
-                    f.write("\n")
+            task_dir = os.path.join(targets_root, config, p["task_id"])
+            os.makedirs(task_dir, exist_ok=True)
+            with open(os.path.join(task_dir, f"step_{k}.json"), "w", encoding="utf-8") as f:
+                json.dump({"extraction_status": ex.status, "reasons": ex.reasons,
+                           "targets": [{"kind": t.kind, "value": t.value, "origin": t.origin} for t in ex.targets]},
+                          f, indent=2, sort_keys=True, ensure_ascii=False)
+                f.write("\n")
 
     assert len(rows) == len(picks)
     assert len({(r["config"], r["task_id"], r["step_index"]) for r in rows}) == len(rows)

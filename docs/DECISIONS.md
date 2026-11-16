@@ -220,6 +220,15 @@ run until the rules are frozen in the pre-registration).
 - `target_in_earlier_reasoning` applies the target rules to the reasoning and visible text of
   steps 1..k-1. `command_core_leak` (first non-`cd` simple command) is a diagnostic.
 - `leak_category`: `command` > `target_only` > `none`. No steps are dropped.
+- **Key judgment call: a basename alone is not a target leak.** A path target leaks only if
+  its full normalised path, or a relative suffix of at least 2 components, is named. A bare
+  basename does not count, because basenames collide (common file names, ordinary words).
+  This is conservative: in validation, 17 of 20 basename-only mentions did refer to the
+  target, and `basename_only_mention` (25 steps, 10.4%) is about as frequent as target leaks
+  (28 steps, 11.7%). Pilot rates by config, target leaks / basename-only mentions: Qwen 3/80
+  and 6/80, Kimi 23/80 and 8/80, Nemotron 2/80 and 11/80 (plus Nemotron's 1 command leak).
+  **Open question for Sudhi:** should results also be reported a second time with
+  basename-only mentions counted as target leaks?
 - Pilot results (240 steps):
 
 | Config | command | target_only | none | basename only | target in earlier reasoning |
@@ -301,6 +310,16 @@ T+R view tokens (median / p90 / max):
   blocks; every output is a string. Views keep outputs verbatim, so a few view files contain
   NUL bytes (text tools may treat them as binary). (An earlier version of this file said only
   one Kimi output had NUL bytes; that was wrong.)
+- **Leak categories.** The command category is nearly empty in the pilot (1 of 240 steps), so
+  the planned three-way split (none / target only / command) is in practice a two-way split
+  (none / any leak).
+- **Target leaks are concentrated in Kimi** (23 of the 28 target-only steps; Qwen 3,
+  Nemotron 2). Leak-stratified comparisons across models will rest mostly on Kimi.
+- **Ambiguous extraction.** 43 of 240 pilot steps (18%) have `ambiguous` target extraction
+  (Kimi 25 of the 43). Flags for these steps are still computed from the literal tokens that
+  were parsed, so target leaks may be undercounted for them.
+- **Compound commands.** In a multi-target compound command, naming any one target counts as
+  a target leak, even if the reasoning names only a minor part of the command.
 - **Data terms.** The dataset is gated and evaluation-only: no training on it, no transcript
   text in git, and only people who have accepted the terms may see transcript text (including
   the `debug/handcheck/` dumps).
@@ -308,12 +327,12 @@ T+R view tokens (median / p90 / max):
 ## 9. Open items
 
 - Retry sensitivity plan (section 8): proposed, awaiting confirmation.
-- Whether the reader runs on SHADE-Arena early steps for the self-consistency bound.
+- Whether the reader runs on SHADE-Arena at all (early steps, for the self-consistency bound).
 - Reader model choice, and recount of the longest views with its real tokenizer.
 - ~~Leak matching rules write-up (section 6).~~ Done 2026-11-15: `docs/LEAK_RULES.md`. To be
-  reviewed by Sudhi and frozen in the pre-registration. Open sub-question: whether to also
-  report results with basename-only mentions counted as target leaks, since most of them
-  refer to the target.
+  reviewed by Sudhi and frozen in the pre-registration.
+- Basename question (section 6): whether to also report results with basename-only mentions
+  counted as target leaks, since 17 of 20 validated ones refer to the target.
 - Replacement rule for episodes with fewer than 4 eligible steps (not needed for the current
   sample).
 - Repeated actions: for some test steps the hidden target command also appears as an earlier
@@ -335,6 +354,8 @@ T+R view tokens (median / p90 / max):
   Decide whether this affects the self-consistency bound or a SHADE reader run, and whether
   to check how often SHADE honest reasoning refers to it.
 - Pre-registration freeze.
+- Main-split views and leak flags: to be generated (`--split main`) only after the
+  pre-registration is frozen. Not generated yet.
 
 Nothing runs on the main set before the pilot and the pre-registration are done.
 
@@ -351,8 +372,10 @@ uv run scripts/view_lengths.py     # sample/view_lengths.csv, view_lengths_summa
 uv run scripts/build_views.py      # sample/views_manifest.csv, views_summary.json;
                                    # views/pilot/ and views/examples/ (gitignored, contain transcript text)
 uv run scripts/leak_flags.py       # sample/leak_flags.csv, leak_flags_summary.json (reads leak_validation.csv);
-                                   # views/pilot/.../targets.json and debug/leaks/ (gitignored)
+                                   # targets/pilot/ and debug/leaks/ (gitignored, contain transcript text)
 uv run scripts/dump_handcheck.py   # optional: debug/handcheck/ (gitignored, contains transcript text)
 ```
 
-Each script is deterministic: rerunning produces byte-identical files.
+Each script is deterministic: rerunning produces byte-identical files. `build_views.py` and
+`leak_flags.py` write to separate directories (`views/` and `targets/`), so either can be
+rerun on its own without the other.

@@ -6,13 +6,14 @@ validated on the 240 pilot steps only, and are to be frozen in the pre-registrat
 they are applied to the main split.
 
 - Code: `src/leak_rules.py` (rules), `scripts/leak_flags.py` (applies them; `--split`,
-  default `pilot`). Run after `scripts/build_views.py`.
+  default `pilot`). Independent of `scripts/build_views.py`; either can be rerun.
 - Committed outputs: `sample/leak_flags.csv` (one row per test step: IDs, extraction status,
   target counts and kinds, every flag as a boolean, `leak_category`),
   `sample/leak_flags_summary.json` (rates, status counts, validation results),
   `sample/leak_validation.csv` (manual validation verdicts by step ID).
-- Gitignored outputs (contain transcript text): `views/pilot/.../targets.json` (extracted
-  targets per step), `debug/leaks/pilot/extraction_handcheck.txt`,
+- Gitignored outputs (contain transcript text):
+  `targets/{split}/{config}/{task_id}/step_{k}.json` (extracted targets per step, rebuilt on
+  each run), `debug/leaks/pilot/extraction_handcheck.txt`,
   `debug/leaks/pilot/validation.txt`.
 
 All examples below are synthetic. None of the example strings occurs in the 210 sampled
@@ -264,3 +265,9 @@ Phase 4 validation round 1:
 10. curl/wget data values are paths only when written `@FILE` (a JSON body had been read as a
     path).
 11. One-component absolute directories count only when they are the step's only path target.
+
+Pipeline change (2026-11-16, no rule change, flags unchanged):
+
+12. Extracted targets moved from `views/{split}/.../targets.json` to
+    `targets/{split}/{config}/{task_id}/step_{k}.json`, so rebuilding the views no longer
+    deletes them.
