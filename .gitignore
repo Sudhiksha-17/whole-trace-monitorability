@@ -1,1 +1,5 @@
 data/
+debug/
+__pycache__/
+views/
+targets/

@@ -1,0 +1,25 @@
+{
+  "arm": "honest",
+  "configs": [
+    "basharena-qwen3.5-397b",
+    "basharena-kimi-k3",
+    "basharena-nemotron-3-ultra"
+  ],
+  "dataset": "AlignmentResearch/telling-fibs-eval-transcripts",
+  "dataset_revision": "97d20337785f68062befa9324d97d7c81063b0c2",
+  "draw_procedure": "sorted(shared task_ids as strings), random.Random(seed).shuffle, first n_main = main, next n_pilot = pilot",
+  "honest_episodes_per_config": {
+    "basharena-kimi-k3": 626,
+    "basharena-nemotron-3-ultra": 627,
+    "basharena-qwen3.5-397b": 626
+  },
+  "library_versions": {
+    "pyarrow": "26.0.1"
+  },
+  "main_task_success_encoding": "C = correct (main_task_score == 1.0), I = incorrect",
+  "n_main": 50,
+  "n_pilot": 20,
+  "python_version": "3.13.5",
+  "seed": 20261113,
+  "shared_task_id_count": 623
+}

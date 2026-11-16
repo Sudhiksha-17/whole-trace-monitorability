@@ -1,0 +1,412 @@
+{
+  "by_config_and_quarter": {
+    "all|all": {
+      "t": {
+        "max": 111448,
+        "median": 19282.0,
+        "n": 840,
+        "n_over_100000": 1,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 41247.7
+      },
+      "tr": {
+        "max": 168278,
+        "median": 24773.5,
+        "n": 840,
+        "n_over_100000": 9,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 57420.2
+      }
+    },
+    "all|early": {
+      "t": {
+        "max": 25750,
+        "median": 6579.0,
+        "n": 210,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 16076.6
+      },
+      "tr": {
+        "max": 45815,
+        "median": 7567.5,
+        "n": 210,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 23009.8
+      }
+    },
+    "all|early_mid": {
+      "t": {
+        "max": 64514,
+        "median": 16325.5,
+        "n": 210,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 29797.5
+      },
+      "tr": {
+        "max": 98004,
+        "median": 20547.5,
+        "n": 210,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 45675.2
+      }
+    },
+    "all|late": {
+      "t": {
+        "max": 111448,
+        "median": 30661.5,
+        "n": 210,
+        "n_over_100000": 1,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 54711.2
+      },
+      "tr": {
+        "max": 168278,
+        "median": 40489.0,
+        "n": 210,
+        "n_over_100000": 7,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 74469.9
+      }
+    },
+    "all|late_mid": {
+      "t": {
+        "max": 80152,
+        "median": 25212.0,
+        "n": 210,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 43277.0
+      },
+      "tr": {
+        "max": 120112,
+        "median": 30695.5,
+        "n": 210,
+        "n_over_100000": 2,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 60953.2
+      }
+    },
+    "basharena-kimi-k3|all": {
+      "t": {
+        "max": 111448,
+        "median": 22366.5,
+        "n": 280,
+        "n_over_100000": 1,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 41663.0
+      },
+      "tr": {
+        "max": 168278,
+        "median": 40025.5,
+        "n": 280,
+        "n_over_100000": 9,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 71711.8
+      }
+    },
+    "basharena-kimi-k3|early": {
+      "t": {
+        "max": 19524,
+        "median": 6902.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 16076.6
+      },
+      "tr": {
+        "max": 45815,
+        "median": 12110.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 30803.9
+      }
+    },
+    "basharena-kimi-k3|early_mid": {
+      "t": {
+        "max": 64514,
+        "median": 19633.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 28970.1
+      },
+      "tr": {
+        "max": 98004,
+        "median": 35059.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 54432.8
+      }
+    },
+    "basharena-kimi-k3|late": {
+      "t": {
+        "max": 111448,
+        "median": 32320.5,
+        "n": 70,
+        "n_over_100000": 1,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 58447.2
+      },
+      "tr": {
+        "max": 168278,
+        "median": 56629.5,
+        "n": 70,
+        "n_over_100000": 7,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 98635.4
+      }
+    },
+    "basharena-kimi-k3|late_mid": {
+      "t": {
+        "max": 78438,
+        "median": 26425.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 45422.9
+      },
+      "tr": {
+        "max": 120112,
+        "median": 45350.5,
+        "n": 70,
+        "n_over_100000": 2,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 80493.6
+      }
+    },
+    "basharena-nemotron-3-ultra|all": {
+      "t": {
+        "max": 85369,
+        "median": 20324.0,
+        "n": 280,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 42701.3
+      },
+      "tr": {
+        "max": 91318,
+        "median": 22669.0,
+        "n": 280,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 50170.8
+      }
+    },
+    "basharena-nemotron-3-ultra|early": {
+      "t": {
+        "max": 24819,
+        "median": 6983.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 16825.8
+      },
+      "tr": {
+        "max": 27713,
+        "median": 7629.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 17745.3
+      }
+    },
+    "basharena-nemotron-3-ultra|early_mid": {
+      "t": {
+        "max": 54824,
+        "median": 16276.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 31334.8
+      },
+      "tr": {
+        "max": 56346,
+        "median": 18196.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 34337.9
+      }
+    },
+    "basharena-nemotron-3-ultra|late": {
+      "t": {
+        "max": 85369,
+        "median": 33727.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 57831.6
+      },
+      "tr": {
+        "max": 91318,
+        "median": 37656.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 66090.3
+      }
+    },
+    "basharena-nemotron-3-ultra|late_mid": {
+      "t": {
+        "max": 80152,
+        "median": 25688.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 46390.6
+      },
+      "tr": {
+        "max": 85100,
+        "median": 28051.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 50433.2
+      }
+    },
+    "basharena-qwen3.5-397b|all": {
+      "t": {
+        "max": 78674,
+        "median": 15864.0,
+        "n": 280,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 35263.1
+      },
+      "tr": {
+        "max": 86103,
+        "median": 17054.0,
+        "n": 280,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 38768.1
+      }
+    },
+    "basharena-qwen3.5-397b|early": {
+      "t": {
+        "max": 25750,
+        "median": 5800.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 10754.3
+      },
+      "tr": {
+        "max": 26879,
+        "median": 6470.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 11602.6
+      }
+    },
+    "basharena-qwen3.5-397b|early_mid": {
+      "t": {
+        "max": 35570,
+        "median": 13958.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 29657.5
+      },
+      "tr": {
+        "max": 36887,
+        "median": 14974.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 31089.5
+      }
+    },
+    "basharena-qwen3.5-397b|late": {
+      "t": {
+        "max": 78674,
+        "median": 25409.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 50426.9
+      },
+      "tr": {
+        "max": 86103,
+        "median": 28587.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 55278.8
+      }
+    },
+    "basharena-qwen3.5-397b|late_mid": {
+      "t": {
+        "max": 55792,
+        "median": 19566.5,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 37910.4
+      },
+      "tr": {
+        "max": 61459,
+        "median": 22577.0,
+        "n": 70,
+        "n_over_100000": 0,
+        "n_over_1000000": 0,
+        "n_over_200000": 0,
+        "p90": 42448.8
+      }
+    }
+  },
+  "excluded": "visible text (counted separately), system prompt, harness user messages, formatting tokens",
+  "output_cap_tokens_per_tool_output": 2000,
+  "percentile_method": "statistics.quantiles(n=10, method='inclusive')[8] for p90; statistics.median",
+  "t_view": "task description + all tool calls of steps 1..k-1 (name + JSON arguments) + each matched tool output (content + error message) capped per output",
+  "thresholds_are_strictly_greater": true,
+  "tiktoken_version": "0.14.0",
+  "tokenizer": "tiktoken cl100k_base (proxy, not the reader's tokenizer)",
+  "tr_view": "t_view + reasoning of steps 1..k-1 + reasoning of step k"
+}

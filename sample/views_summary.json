@@ -1,0 +1,124 @@
+{
+  "n_distinct_sanitised_outputs_shown_by_config": {
+    "basharena-kimi-k3": 1,
+    "basharena-nemotron-3-ultra": 50,
+    "basharena-qwen3.5-397b": 7
+  },
+  "n_harness_messages_in_episodes_by_config": {
+    "basharena-kimi-k3": 2,
+    "basharena-nemotron-3-ultra": 0,
+    "basharena-qwen3.5-397b": 0
+  },
+  "n_outputs_truncated_by_view": {
+    "R_only": 0,
+    "T": 185,
+    "T0": 0,
+    "T_plus_R": 185
+  },
+  "n_test_steps": 240,
+  "n_views": 960,
+  "n_views_with_harness_message_by_view": {
+    "R_only": 0,
+    "T": 0,
+    "T0": 0,
+    "T_plus_R": 0
+  },
+  "output_cap_tokens": 2000,
+  "output_sanitisation": "ANSI escape sequences removed; NUL bytes replaced with the literal text \\x00; applied before the cap",
+  "repeated_target_action": {
+    "all|all": {
+      "n": 240,
+      "repeated": 7
+    },
+    "all|early": {
+      "n": 60,
+      "repeated": 1
+    },
+    "all|early_mid": {
+      "n": 60,
+      "repeated": 1
+    },
+    "all|late": {
+      "n": 60,
+      "repeated": 3
+    },
+    "all|late_mid": {
+      "n": 60,
+      "repeated": 2
+    },
+    "basharena-kimi-k3|all": {
+      "n": 80,
+      "repeated": 0
+    },
+    "basharena-kimi-k3|early": {
+      "n": 20,
+      "repeated": 0
+    },
+    "basharena-kimi-k3|early_mid": {
+      "n": 20,
+      "repeated": 0
+    },
+    "basharena-kimi-k3|late": {
+      "n": 20,
+      "repeated": 0
+    },
+    "basharena-kimi-k3|late_mid": {
+      "n": 20,
+      "repeated": 0
+    },
+    "basharena-nemotron-3-ultra|all": {
+      "n": 80,
+      "repeated": 5
+    },
+    "basharena-nemotron-3-ultra|early": {
+      "n": 20,
+      "repeated": 1
+    },
+    "basharena-nemotron-3-ultra|early_mid": {
+      "n": 20,
+      "repeated": 1
+    },
+    "basharena-nemotron-3-ultra|late": {
+      "n": 20,
+      "repeated": 2
+    },
+    "basharena-nemotron-3-ultra|late_mid": {
+      "n": 20,
+      "repeated": 1
+    },
+    "basharena-qwen3.5-397b|all": {
+      "n": 80,
+      "repeated": 2
+    },
+    "basharena-qwen3.5-397b|early": {
+      "n": 20,
+      "repeated": 0
+    },
+    "basharena-qwen3.5-397b|early_mid": {
+      "n": 20,
+      "repeated": 0
+    },
+    "basharena-qwen3.5-397b|late": {
+      "n": 20,
+      "repeated": 1
+    },
+    "basharena-qwen3.5-397b|late_mid": {
+      "n": 20,
+      "repeated": 1
+    }
+  },
+  "split": "pilot",
+  "token_ratio_view_over_proxy": {
+    "T": {
+      "max": 1.1206,
+      "median": 1.0214,
+      "min": 0.8873
+    },
+    "T_plus_R": {
+      "max": 1.1436,
+      "median": 1.0365,
+      "min": 0.9121
+    }
+  },
+  "tokenizer": "tiktoken cl100k_base"
+}
