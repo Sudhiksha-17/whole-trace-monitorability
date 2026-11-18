@@ -19,7 +19,10 @@ READ, WRITE, EXEC, DELETE, PERM, NET = (
 TYPES = [READ, WRITE, EXEC, DELETE, PERM, NET]
 
 SKIP_LEADING = {"cd", "export", "set", "unset", "true", ":", "umask"}
-WRAPPERS = {"sudo", "nohup", "time", "nice", "stdbuf", "env", "timeout", "command", "builtin"}
+WRAPPERS = {"sudo", "nohup", "time", "nice", "stdbuf", "env", "timeout", "command", "builtin", "strace", "firejail"}
+STRACE_OPT_ARG = {"-e", "-o", "-p", "-s", "-E", "-u", "-P", "-a", "-I", "-X"}  # strace options that take a value
+LOOP_SKIP = {"for", "done", "fi", "esac", "case", "select", "{", "}", "(", ")", "do", "then", "else"}  # shell syntax, never the action
+LOOP_PREFIX = re.compile(r"^\s*(?:(?:do|then|else|elif|if|while|until|!)\s+)+")
 WRAPPER_ARG = {"timeout": 1, "nice": 0}  # number of positional args that belong to the wrapper
 
 READ_CMDS = {
@@ -29,6 +32,7 @@ READ_CMDS = {
     "uname", "date", "md5sum", "sha256sum", "sha1sum", "journalctl", "nproc", "free", "uptime", "test", "[",
     "basename", "dirname", "jq", "xxd", "strings", "ping", "dig", "nslookup", "host", "getent", "ldd", "pgrep",
     "tr", "column", "nl", "tac", "od", "hexdump", "lscpu", "mount", "groups", "last", "w", "who", "locate", "history",
+    "iptables-save", "ip6tables-save",
 }
 NO_TARGET_CMDS = {"pwd", "whoami", "id", "ps", "top", "env", "printenv", "echo", "printf", "date", "uname", "hostname",
                   "nproc", "free", "uptime", "ss", "netstat", "groups", "last", "w", "who", "history", "lscpu", "mount",
@@ -45,12 +49,14 @@ NET_FW = {"iptables", "ip6tables", "nft", "ufw", "firewall-cmd"}
 FW_READ_FLAGS = {"-L", "-S", "-n", "-v", "--list", "--list-rules", "-C", "status", "list", "show"}
 FW_CHANGE_FLAGS = {"-A", "-I", "-D", "-F", "-P", "-X", "-R", "-N", "-Z", "--append", "--insert", "--delete", "--flush",
                    "allow", "deny", "reject", "enable", "disable", "reset", "limit", "add", "delete", "insert", "flush"}
+FWCMD_CHANGE_PREFIXES = ("--add-", "--remove-", "--set-", "--change-", "--reload", "--complete-reload", "--panic-on")
 
 # options (with a separate value) per command, so the value is not mistaken for the target
 OPT_ARG = {
     "head": {"-n", "-c"}, "tail": {"-n", "-c"}, "grep": {"-e", "-f", "-m", "-A", "-B", "-C", "--include", "--exclude"},
     "egrep": {"-e", "-f", "-m", "-A", "-B", "-C"}, "rg": {"-e", "-f", "-m", "-A", "-B", "-C", "-g", "--glob", "-t"},
     "find": {"-name", "-iname", "-type", "-path", "-maxdepth", "-mindepth", "-mtime", "-size", "-user", "-perm"},
+    "stat": {"-c", "--format", "--printf"}, "gcc": {"-o"}, "swiftc": {"-o"},
     "ls": set(), "sort": {"-k", "-t", "-o"}, "cut": {"-d", "-f", "-c"}, "wc": set(), "diff": set(),
     "chmod": set(), "chown": set(), "cp": {"-t"}, "mv": {"-t"}, "mkdir": {"-m"}, "pip": set(), "pytest": {"-k", "-m", "-p", "-c", "--maxfail", "--tb"},
     "python": {"-m", "-W"}, "python3": {"-m", "-W"}, "tar": {"-C", "-f", "--file", "--directory"},
@@ -82,6 +88,8 @@ def _split_unquoted(s: str, seps: list[str]) -> list[str]:
             i += 1
             continue
         hit = next((sp for sp in seps if s.startswith(sp, i)), None)
+        if hit == "&" and ((i > 0 and s[i - 1] in "<>&|") or s[i + 1:i + 2] in (">", "&")):
+            hit = None  # 2>&1, &>file, >&2 are redirections, not a background separator
         if hit:
             out.append("".join(buf))
             buf = []
@@ -93,13 +101,38 @@ def _split_unquoted(s: str, seps: list[str]) -> list[str]:
     return [p.strip() for p in out if p.strip()]
 
 
+_HEREDOC_RE = re.compile(r"(?<!<)<<(-?)\s*(['\"]?)([A-Za-z_][A-Za-z_0-9]*)\2")
+
+
 def _cut_heredoc(cmd: str) -> tuple[str, bool]:
-    m = re.search(r"<<-?\s*['\"]?([A-Za-z_][A-Za-z_0-9]*)['\"]?", cmd)
-    if not m:
-        return cmd, False
-    line_end = cmd.find("\n", m.end())
-    head = cmd[:line_end] if line_end != -1 else cmd
-    return head, True
+    """Drop heredoc bodies and the `<< DELIM` marker; keep every command line, including lines after the
+    closing delimiter (`cat > f << EOF ... EOF` then `python f && rm x` keeps the last line as a chain)."""
+    out, pending, used = [], [], False
+    for line in cmd.split("\n"):
+        if pending:
+            delim, dash = pending[0]
+            if (line.lstrip("\t") if dash else line).strip() == delim:
+                pending.pop(0)
+            continue
+        found = [m for m in _HEREDOC_RE.finditer(line) if not _inside_quotes(line, m.start())]
+        if found:
+            used = True
+            pending = [(m.group(3), bool(m.group(1))) for m in found]
+            for m in reversed(found):
+                line = line[:m.start()] + " " + line[m.end():]
+        out.append(line)
+    return "\n".join(out).strip(), used
+
+
+def _inside_quotes(s: str, pos: int) -> bool:
+    q = None
+    for i, c in enumerate(s[:pos]):
+        if q:
+            if c == q and (q == "'" or s[i - 1] != "\\"):
+                q = None
+        elif c in "'\"":
+            q = c
+    return q is not None
 
 
 def _tokens(seg: str) -> list[str]:
@@ -143,6 +176,12 @@ def _strip_wrappers(tokens: list[str]) -> list[str]:
                     i += 2 if tokens[i] in ("-u", "-g", "-U") else 1
             elif t == "env":
                 while i < len(tokens) and (tokens[i].startswith("-") or "=" in tokens[i]):
+                    i += 1
+            elif t == "strace":
+                while i < len(tokens) and tokens[i].startswith("-"):
+                    i += 2 if tokens[i] in STRACE_OPT_ARG else 1
+            elif t == "firejail":
+                while i < len(tokens) and tokens[i].startswith("-"):
                     i += 1
             elif t in WRAPPER_ARG:
                 while i < len(tokens) and tokens[i].startswith("-"):
@@ -227,7 +266,10 @@ def _classify_tokens(tokens: list[str], redirect: str | None, rest_stages: list[
     # ---- network (must come before generic reads)
     if cmd in NET_FW:
         argset = set(args)
-        if argset & FW_CHANGE_FLAGS and not (argset & {"-L", "-S", "--list", "--list-rules", "status"}):
+        fwcmd_change = cmd == "firewall-cmd" and any(a.startswith(FWCMD_CHANGE_PREFIXES) for a in args)
+        if fwcmd_change:
+            r.update(action_type=NET, target=_fwcmd_target(args))
+        elif argset & FW_CHANGE_FLAGS and not (argset & {"-L", "-S", "--list", "--list-rules", "status"}):
             tgt = _fw_target(args)
             r.update(action_type=NET, target=tgt)
         else:
@@ -236,7 +278,9 @@ def _classify_tokens(tokens: list[str], redirect: str | None, rest_stages: list[
     if cmd == "ip":
         verbs = {"add", "del", "delete", "set", "flush", "replace", "change"}
         if verbs & set(args):
-            r.update(action_type=NET, target=ops[-1] if ops else "none")
+            # the address is the target (`ip addr add 192.0.2.10/32 dev lo` -> 192.0.2.10/32), else the last operand
+            addr = [o for o in ops if re.fullmatch(r"[\d.:a-fA-F]+(/\d+)?", o) and any(ch.isdigit() for ch in o)]
+            r.update(action_type=NET, target=addr[0] if addr else (ops[-1] if ops else "none"))
         else:
             r.update(action_type=READ, target="none")
         return r
@@ -278,6 +322,9 @@ def _classify_tokens(tokens: list[str], redirect: str | None, rest_stages: list[
         return r
     if cmd == "git":
         return _git(args, r)
+    if cmd == "dpkg" and set(args) & {"-l", "-L", "-s", "-S", "--list", "--status", "--listfiles", "--search"}:
+        r.update(action_type=READ, target=ops[0] if ops else "none")
+        return r
     if cmd in ("apt", "apt-get", "yum", "dnf", "apk", "pip", "pip3", "npm", "yarn"):
         return _pkg(cmd, args, ops, r)
 
@@ -315,7 +362,7 @@ def _classify_tokens(tokens: list[str], redirect: str | None, rest_stages: list[
 
     # ---- exec / install
     if cmd in ("python", "python3") or cmd.startswith("python3."):
-        if "-c" in args or not ops:
+        if "-c" in args or not ops or ops[0] == "-":  # -c, stdin, or a heredoc (`python3 - << EOF`)
             r.update(action_type=EXEC, target="inline")
         elif "-m" in args:
             mod = args[args.index("-m") + 1] if args.index("-m") + 1 < len(args) else ""
@@ -341,8 +388,8 @@ def _classify_tokens(tokens: list[str], redirect: str | None, rest_stages: list[
     if cmd in ("kill", "pkill", "killall"):
         r.update(action_type=EXEC, target=ops[-1] if ops else "none")
         return r
-    if cmd in ("gcc", "g++", "cc", "clang", "javac"):
-        src = [o for o in ops if re.search(r"\.(c|cc|cpp|java|go|rs)$", o)]
+    if cmd in ("gcc", "g++", "cc", "clang", "javac", "swiftc", "rustc"):
+        src = [o for o in ops if re.search(r"\.(c|cc|cpp|java|go|rs|swift)$", o)]
         r.update(action_type=EXEC, target=src[0] if src else (ops[0] if ops else "none"))
         return r
     if cmd == "sleep":
@@ -368,6 +415,9 @@ def _classify_tokens(tokens: list[str], redirect: str | None, rest_stages: list[
         elif cmd in ("grep", "egrep", "fgrep", "rg"):
             has_pat = "-e" in args or "-f" in args
             files = ops if has_pat else ops[1:]
+            tgt = files[0] if files else "none"
+        elif cmd == "jq":  # jq FILTER FILE: the filter is not the target
+            files = ops[1:]
             tgt = files[0] if files else "none"
         elif cmd in ("sed", "awk"):
             files = ops if ("-e" in args or "-f" in args) else ops[1:]
@@ -402,12 +452,29 @@ def _opt_value(args: list[str], names: tuple[str, ...]) -> str | None:
 
 
 def _fw_target(args: list[str]) -> str:
+    """iptables/ufw/nft target: CHAIN:port, else the chain, else a -s/-d address, else the last plain operand
+    (`ufw allow 8080` -> 8080). Never a flag or a verb: `iptables -F` (flush every chain) -> none."""
     port = _opt_value(args, ("--dport", "--sport", "--dports"))
-    chain = next((args[i + 1] for i, a in enumerate(args) if a in ("-A", "-I", "-D", "-F", "-P", "-X") and i + 1 < len(args)), None)
+    chain = next((args[i + 1] for i, a in enumerate(args)
+                  if a in ("-A", "-I", "-D", "-F", "-P", "-X", "-Z", "-N", "-R") and i + 1 < len(args)
+                  and not args[i + 1].startswith("-")), None)
     src = _opt_value(args, ("-s", "--source", "-d", "--destination", "from", "to"))
     if chain and port:
         return f"{chain}:{port}"
-    return chain or src or (args[-1] if args else "none")
+    if chain or src:
+        return chain or src
+    opt_values = {i + 1 for i, a in enumerate(args) if a in ("-t", "--table")}
+    plain = [a for i, a in enumerate(args) if i not in opt_values and not a.startswith("-")
+             and a not in FW_CHANGE_FLAGS and a not in FW_READ_FLAGS]
+    return plain[-1] if plain else "none"
+
+
+def _fwcmd_target(args: list[str]) -> str:
+    """firewall-cmd --add-port=8080/tcp -> 8080/tcp; --add-source=10.0.0.5 -> 10.0.0.5; --reload -> none."""
+    for a in args:
+        if a.startswith(FWCMD_CHANGE_PREFIXES) and "=" in a:
+            return a.split("=", 1)[1] or "none"
+    return "none"
 
 
 def _host_of(s: str) -> str:
@@ -425,7 +492,7 @@ def _curl(cmd: str, args: list[str], r: dict) -> dict:
     method = _opt_value(args, ("-X", "--request"))
     sends = (
         bool(method and method.upper() in ("POST", "PUT", "PATCH", "DELETE"))
-        or bool(argset & {"-d", "-F", "-T"})
+        or bool(cmd == "curl" and argset & {"-d", "-F", "-T"})  # for wget, -T is a timeout and -d is debug
         or any(a.startswith(("--data", "--form", "--upload-file", "--json", "--post-")) for a in args)
     )
     r.update(action_type=NET if sends else READ,
@@ -475,39 +542,86 @@ def _pkgname(s: str) -> str:
     return re.split(r"[=<>~!\[]", s)[0]
 
 
+def _strip_comments(cmd: str) -> str:
+    """Remove shell comments: whole `# ...` lines and a trailing ` # ...`, when the # is outside quotes."""
+    out = []
+    for line in cmd.split("\n"):
+        for m in re.finditer(r"(?:^|(?<=\s))#", line):
+            if not _inside_quotes(line, m.start()):
+                line = line[:m.start()]
+                break
+        out.append(line)
+    return "\n".join(out)
+
+
+def _unwrap_segment(seg: str) -> str:
+    """`do cmd` / `then cmd` / `if cmd` -> cmd; a bare `VAR=$(cmd)` or VAR=`cmd` -> cmd."""
+    seg = LOOP_PREFIX.sub("", seg).strip()
+    m = re.fullmatch(r"(?:export\s+)?[A-Za-z_][A-Za-z_0-9]*=(?:\$\((.*)\)|`(.*)`)", seg, re.S)
+    if m:
+        seg = (m.group(1) if m.group(1) is not None else m.group(2)).strip()
+    return seg
+
+
+def _classify_stages(stages: list[str], info: dict) -> dict:
+    tokens, redirect = _redirect_target(_tokens(stages[0]))
+    r = _classify_tokens(tokens, redirect, stages[1:], dict(info))
+    r.pop("cwd", None)
+    return r
+
+
 def classify_bash(cmd: str) -> dict:
-    cmd = cmd.strip()
-    cmd, heredoc = _cut_heredoc(cmd)
-    segs = _split_unquoted(cmd, ["&&", "||", ";", "\n"])
+    """Type and target come from the FIRST real command (scoring rule 3.1).
+
+    `parts` lists (action_type, target) for EVERY real command of a chain, in order, with the first
+    real command first. Severity should take the most severe part (taxonomy §6); scoring ignores it.
+    """
+    cmd, heredoc = _cut_heredoc(_strip_comments(cmd.strip()))
+    cmd = re.sub(r"\\\r?\n", " ", cmd)  # join `\`-continued lines into one command (after heredoc bodies are gone)
+    segs = [_unwrap_segment(x) for x in _split_unquoted(cmd, ["&&", "||", ";", "\n", "&"])]
+    segs = [x for x in segs if x]
     chained = len(segs) > 1
     cwd = None
-    chosen = None
+    real = []  # pipeline stages of each real (non cd/export/...) segment, in order
     for seg in segs:
         stg = _split_unquoted(seg, ["|"])
         first_tokens = _strip_wrappers(_tokens(stg[0])) if stg else []
         name = posixpath.basename(first_tokens[0]) if first_tokens else ""
+        if name in LOOP_SKIP:
+            continue
+        if first_tokens == [] and len(segs) > 1 and re.match(r"[A-Za-z_][A-Za-z_0-9]*=", stg[0].strip()):
+            continue  # a bare `KEY="..."` assignment sets a variable; the next command is the action
         if name in SKIP_LEADING and len(segs) > 1:
-            if name == "cd" and len(first_tokens) > 1 and cwd is None:
+            if name == "cd" and len(first_tokens) > 1 and cwd is None and not real:
                 cwd = first_tokens[1]
             continue
-        chosen = stg
-        break
-    if chosen is None:
-        chosen = _split_unquoted(segs[0], ["|"]) if segs else [""]
-    tokens, redirect = _redirect_target(_tokens(chosen[0]))
-    info = dict(chained=chained, piped=len(chosen) > 1, heredoc=heredoc)
+        real.append(stg)
+    if not real:
+        real = [_split_unquoted(segs[0], ["|"]) if segs else [""]]
+    info = dict(chained=chained, piped=len(real[0]) > 1, heredoc=heredoc)
     if cwd:
         info["cwd"] = cwd
-    r = _classify_tokens(tokens, redirect, chosen[1:], info)
-    r.pop("cwd", None)
-    r["chained"], r["piped"], r["heredoc"] = chained, len(chosen) > 1, heredoc or r.get("heredoc", False)
+    results = [_classify_stages(stg, info) for stg in real]
+    r = results[0]
+    parts = []
+    for res in results:
+        parts.extend(res.get("parts") or [(res["action_type"], res["target"])])  # bash -c "..." brings its own
+    r["parts"] = parts
+    r["chained"], r["piped"], r["heredoc"] = chained or r.get("chained", False), len(real[0]) > 1, heredoc or r.get("heredoc", False)
     return r
 
 
 def classify_tool_call(tool: str, args: dict) -> dict:
-    """Non-bash tools. Tool names are placeholders until checked against tools_json [VERIFY]."""
-    # Real BashArena tool names (docs/FORMAT.md of the data pipeline): bash(command), python(code),
-    # text_editor(command, path, ...), occasionally str_replace, read_tool_output, and submit.
+    """Any tool call -> same dict as classify_bash, always with `parts` (one part for non-bash tools)."""
+    r = _classify_tool_call(tool, args or {})
+    r.setdefault("parts", [(r["action_type"], r["target"])])
+    return r
+
+
+def _classify_tool_call(tool: str, args: dict) -> dict:
+    # Real BashArena tools (docs/FORMAT.md): bash(command), python(code), text_editor(command, path, plus
+    # file_text, old_str/new_str or view_range), occasionally str_replace, read_tool_output, and submit.
+    # The argument keys of the standalone str_replace tool are still [VERIFY] (one call in the 840 picked steps).
     r = _empty(tool)
     r["excluded"] = False
     t = tool.lower()
