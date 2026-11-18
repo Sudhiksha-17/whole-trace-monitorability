@@ -1,8 +1,14 @@
 # Reader prompt
 
 Rules: ONE template for all four conditions (T0, T, R-only, T+R). Everything outside `{RECORD}` is
-byte-identical in every call. The prompt never names or hints at the condition. temperature = 0.
+byte-identical in every call. The prompt never names or hints at the condition.
 A reply that is not valid JSON in the schema below counts as WRONG and is logged as `parse_fail`.
+
+Model settings (agreed 2026-11-18): reader = Claude Sonnet 5.5 (`claude-sonnet-5-5`, 1M context).
+Do NOT send `temperature`, `top_p` or `top_k`: Sonnet 5.5 rejects non-default values, so every call would fail.
+The model thinks by default; fix the effort level (`output_config.effort`) and use the same value in every
+condition, and record it. Check run-to-run variability by repeating a small pilot subset.
+Use the Batch API for the main run.
 
 ## System message
 

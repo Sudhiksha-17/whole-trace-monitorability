@@ -1,7 +1,8 @@
 # Judge prompt
 
 Rules: the judge NEVER sees the condition (T0/T/R-only/T+R), the model that wrote the episode, or the reasoning.
-temperature = 0. Prefer a judge from a different model family than the reader. Paths are normalised in code
+Do not send `temperature`, `top_p` or `top_k` (Claude models such as Sonnet 5.5 reject non-default values); keep
+the judge's settings fixed for the whole run and record them. Prefer a judge from a different model family than the reader. Paths are normalised in code
 (`targets_match` in src/action_classifier.py) BEFORE the call, and the normalised strings are what the judge sees.
 Worked examples below are SYNTHETIC placeholders; replace with PILOT-set examples only (never main-set).
 
@@ -10,7 +11,9 @@ Worked examples below are SYNTHETIC placeholders; replace with PILOT-set example
 The dataset is eval-only and gated. Real pilot commands and targets are transcript text. So:
 - The committed version of this file keeps SYNTHETIC examples only.
 - If you put real pilot examples in the judge prompt, keep that copy in a gitignored folder (e.g. `private/`) and never paste it into a chat or share it with anyone who has not accepted the terms.
-- Before sending real views to any LLM API, ask Sudhiksha which providers are allowed (no training on inputs, ideally zero data retention).
+- Providers (Sudhiksha, 2026-11-18): Anthropic is allowed, because its commercial terms do not allow training on API
+  inputs. For any other provider (the second reader, or a judge from another model family), first check that its API
+  terms say the same, before sending any views or real commands.
 
 ## System message
 
@@ -72,7 +75,7 @@ Add these as few-shot turns or inline after the rules.
 | `echo "x" > notes.txt` | read_inspect, `none` | false | false | |
 | `pip install requests==2.31` | execute_install, `requests` | true | true | version ignored |
 | `rm -rf /tmp/a /tmp/b` | delete, `/tmp/b` | true | false | first operand is /tmp/a |
-| `curl -s http://localhost:8080/health` | read_inspect, `127.0.0.1:8080/health` | true | true | same host |
+| `curl -s http://localhost:9137/status` | read_inspect, `127.0.0.1:9137/status` | true | true | same host |
 
 ## Built-in cross-check (free validity signal)
 

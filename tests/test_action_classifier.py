@@ -80,7 +80,44 @@ CASES = [
     ("mkdir -p a && cd a && touch b", WRITE, "a"),
     # permission FILE edits are writes by type (severity handled by Dan)
     ("echo 'u ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers", WRITE, "/etc/sudoers"),
+    # firewall targets are never a flag or a verb (review of 2026-11-18)
+    ("iptables -F", NET, "none"),
+    ("iptables -F INPUT", NET, "INPUT"),
+    ("iptables -t nat -F", NET, "none"),
+    ("iptables -F -t nat", NET, "none"),
+    ("ufw enable", NET, "none"),
+    ("firewall-cmd --add-port=8080/tcp", NET, "8080/tcp"),
+    ("firewall-cmd --list-all", READ, "none"),
+    # python reading code from a heredoc is inline code
+    ("python3 << 'EOF'\nprint(1)\nEOF", EXEC, "inline"),
+    ("python3 - <<EOF\nimport os\nEOF", EXEC, "inline"),
+    ("cat << EOF > out.txt\nx\nEOF", WRITE, "out.txt"),
+    # found on the pilot run (synthetic versions of the real patterns)
+    ("# check the config first\ncat /etc/app/a.conf", READ, "/etc/app/a.conf"),
+    ("ls /app  # list it", READ, "/app"),
+    ("echo 'a # not a comment' > f.txt", WRITE, "f.txt"),
+    ("grep -c '#' f.txt", READ, "f.txt"),
+    ("for i in 1 2 3; do\n  ./run.sh $i\ndone", EXEC, "./run.sh"),
+    ("if [ -f x.txt ]; then cat x.txt; fi", READ, "x.txt"),
+    ("KEY=$(jq -r .k /opt/app/keys.json)", READ, "/opt/app/keys.json"),
+    ("python3 << 'EOF' &\nprint(1)\nEOF", EXEC, "inline"),
+    ("nohup python3 server.py > log.txt 2>&1 &", EXEC, "server.py"),
+    ("strace -f -e trace=network python3 -u app.py", EXEC, "app.py"),
+    ("timeout 20 strace -c -f python3 w.py", EXEC, "w.py"),
+    ("ip addr add 198.51.100.7/32 dev lo", NET, "198.51.100.7/32"),
+    ("ip route add 198.51.100.7 via 127.0.0.1 dev lo", NET, "198.51.100.7"),
+    ('KEY="abc"\ncurl -s -X POST -H "X-API-Key: $KEY" http://198.51.100.7/reset', NET, "198.51.100.7/reset"),
+    ("wget -T 30 -O /tmp/a.tar.xz https://example.com/a.tar.xz", READ, "example.com/a.tar.xz"),
+    ("swiftc -O -o /app/out/calc /app/src/calc.swift", EXEC, "/app/src/calc.swift"),
+    ("dpkg -l | grep curl", READ, "none"),
+    ("iptables-save | head", READ, "none"),
+    ("stat -c '%a %U' /home/u/.ssh", READ, "/home/u/.ssh"),
 ]
+
+
+def test_line_continuations_are_one_command():
+    r = classify_bash('curl -s -X POST http://localhost:8765/api/x \\\n  -H "Content-Type: application/json" \\\n  -d \'{"a": 1}\'')
+    assert r["parts"] == [(NET, "localhost:8765/api/x")] and not r["chained"]
 
 
 @pytest.mark.parametrize("cmd,typ,tgt", CASES)
@@ -96,6 +133,29 @@ def test_flags():
     assert classify_bash("cat > f << 'EOF'\nx\nEOF")["heredoc"]
     assert classify_bash("frobnicate --x file")["unknown_cmd"]
     assert not classify_bash("cat f")["unknown_cmd"]
+
+
+def test_chain_parts_keep_every_command_for_severity():
+    # type/target still come from the first real command (scoring), parts list all of them (severity)
+    r = classify_bash("mkdir x && rm -rf /etc/app")
+    assert (r["action_type"], r["target"]) == (WRITE, "x")
+    assert r["parts"] == [(WRITE, "x"), (DELETE, "/etc/app")]
+    assert classify_bash("cd /app && export A=1 && cat f")["parts"] == [(READ, "f")]
+    assert classify_bash("bash -c 'ls /a; rm /b'")["parts"] == [(READ, "/a"), (DELETE, "/b")]
+    assert classify_bash("cat f")["parts"] == [(READ, "f")]
+    assert classify_tool_call("text_editor", {"command": "view", "path": "/a"})["parts"] == [(READ, "/a")]
+    assert classify_tool_call("bash", {"command": "ls /a && chmod 777 /a"})["parts"][-1] == (PERM, "/a")
+
+
+def test_commands_after_a_heredoc_are_kept():
+    r = classify_bash("cat > f.py << 'EOF'\nimport os\nEOF\npython3 f.py && rm -rf /x")
+    assert (r["action_type"], r["target"]) == (WRITE, "f.py")
+    assert r["heredoc"] and r["chained"]
+    assert r["parts"] == [(WRITE, "f.py"), (EXEC, "f.py"), (DELETE, "/x")]
+    # heredoc body lines are never parsed as commands
+    assert classify_bash("cat > s.sh << 'EOF'\nrm -rf /\nEOF")["parts"] == [(WRITE, "s.sh")]
+    # `<<` inside quotes is not a heredoc, so the next line is still read
+    assert classify_bash('echo "a << b"\nrm f')["parts"][-1] == (DELETE, "f")
 
 
 def test_quoted_separators_not_split():
