@@ -1,0 +1,207 @@
+{
+  "action_type_by_config": {
+    "basharena-kimi-k3": {
+      "delete": 4,
+      "execute_install": 27,
+      "local_write": 15,
+      "network_change": 2,
+      "permission_change": 3,
+      "read_inspect": 29
+    },
+    "basharena-nemotron-3-ultra": {
+      "delete": 2,
+      "execute_install": 28,
+      "local_write": 15,
+      "network_change": 2,
+      "permission_change": 2,
+      "read_inspect": 31
+    },
+    "basharena-qwen3.5-397b": {
+      "delete": 2,
+      "execute_install": 31,
+      "local_write": 13,
+      "network_change": 4,
+      "permission_change": 4,
+      "read_inspect": 26
+    }
+  },
+  "action_type_overall": {
+    "delete": 8,
+    "execute_install": 86,
+    "local_write": 43,
+    "network_change": 8,
+    "permission_change": 9,
+    "read_inspect": 86
+  },
+  "extra_cap": 10,
+  "flags": {
+    "chained": 140,
+    "heredoc": 28,
+    "mixed_chain": 101,
+    "piped": 31,
+    "unknown_cmd": 20
+  },
+  "handcheck_sample": {
+    "leak_disagree": 9,
+    "mixed_chain": 10,
+    "stratum": 49,
+    "unknown_cmd": 10
+  },
+  "leak_extractor_agreement": {
+    "agree": 145,
+    "disagree": 18,
+    "not_comparable": 77
+  },
+  "n_test_steps": 240,
+  "per_cell": 3,
+  "seed": 20261113,
+  "split": "pilot",
+  "target_is_none": 65,
+  "tool_overall": {
+    "bash": 211,
+    "text_editor": 29
+  },
+  "validation": {
+    "parts_ok": {
+      "extras": {
+        "leak_disagree": {
+          "n": 9,
+          "ok": 9
+        },
+        "mixed_chain": {
+          "n": 10,
+          "ok": 9
+        },
+        "unknown_cmd": {
+          "n": 10,
+          "ok": 10
+        }
+      },
+      "stratified": {
+        "by_type": {
+          "delete": {
+            "n": 7,
+            "ok": 6
+          },
+          "execute_install": {
+            "n": 9,
+            "ok": 9
+          },
+          "local_write": {
+            "n": 9,
+            "ok": 9
+          },
+          "network_change": {
+            "n": 7,
+            "ok": 7
+          },
+          "permission_change": {
+            "n": 8,
+            "ok": 8
+          },
+          "read_inspect": {
+            "n": 9,
+            "ok": 8
+          }
+        },
+        "n_checked": 49,
+        "n_ok": 47,
+        "weighted_accuracy": 0.9583
+      }
+    },
+    "target_ok": {
+      "extras": {
+        "leak_disagree": {
+          "n": 9,
+          "ok": 9
+        },
+        "mixed_chain": {
+          "n": 10,
+          "ok": 10
+        },
+        "unknown_cmd": {
+          "n": 10,
+          "ok": 1
+        }
+      },
+      "stratified": {
+        "by_type": {
+          "delete": {
+            "n": 7,
+            "ok": 7
+          },
+          "execute_install": {
+            "n": 9,
+            "ok": 7
+          },
+          "local_write": {
+            "n": 9,
+            "ok": 9
+          },
+          "network_change": {
+            "n": 7,
+            "ok": 7
+          },
+          "permission_change": {
+            "n": 8,
+            "ok": 8
+          },
+          "read_inspect": {
+            "n": 9,
+            "ok": 9
+          }
+        },
+        "n_checked": 49,
+        "n_ok": 47,
+        "weighted_accuracy": 0.9181
+      }
+    },
+    "type_ok": {
+      "extras": {
+        "leak_disagree": {
+          "n": 9,
+          "ok": 9
+        },
+        "mixed_chain": {
+          "n": 10,
+          "ok": 10
+        },
+        "unknown_cmd": {
+          "n": 10,
+          "ok": 10
+        }
+      },
+      "stratified": {
+        "by_type": {
+          "delete": {
+            "n": 7,
+            "ok": 7
+          },
+          "execute_install": {
+            "n": 9,
+            "ok": 9
+          },
+          "local_write": {
+            "n": 9,
+            "ok": 9
+          },
+          "network_change": {
+            "n": 7,
+            "ok": 7
+          },
+          "permission_change": {
+            "n": 8,
+            "ok": 8
+          },
+          "read_inspect": {
+            "n": 9,
+            "ok": 9
+          }
+        },
+        "n_checked": 49,
+        "n_ok": 49,
+        "weighted_accuracy": 1.0
+      }
+    }
+  }
+}
