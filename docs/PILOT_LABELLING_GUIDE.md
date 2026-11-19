@@ -1,7 +1,5 @@
 # Pilot labelling guide
 
-Worked examples are synthetic; real commands, targets, predictions and annotation notes stay out of git.
-
 This guide covers two checks. First, humans label the real action's type, target and severity to check the classifier and rubric. Second, they compare a reader prediction with that action to check the judge. The first can be done before reader predictions exist. Classifier agreement alone does not validate the judge.
 
 Use [the taxonomy](ACTION_TAXONOMY.md), [the format note](FORMAT.md), [the step rules](step_rules.md) and [the severity rubric](SEVERITY_RUBRIC.md).
@@ -19,7 +17,7 @@ One gold-action item is the **first tool call** of a sampled assistant turn. Lat
 One prediction item is a `(step_id, condition)` pair. Hide the condition and randomise presentation; do not show predictions for the same step side by side. Several predictions for one step are not independent agent steps.
 
 | Check | Show | Hide until independent labels are locked |
-|---|---|---|
+| --- | --- | --- |
 | Gold type, target and severity | Original tool name and full arguments; the agreed rules; necessary earlier context to resolve a working directory or reference | Classifier labels, reader predictions, condition/model metadata, reasoning/visible text, judge verdicts, future actions and tool results |
 | Prediction match | The same call, independently established gold type/target and the reader's structured prediction | Judge verdict/explanation, condition/model metadata, agent reasoning, other same-step predictions and condition-level results |
 
@@ -57,7 +55,7 @@ Specify a consistent target-matching convention for scoring and leak detection. 
 ### Examples
 
 | Real first tool call | Predicted type | Predicted target | Type match | Target match | Explanation |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | `cat /opt/demo/settings.yaml` | `read_inspect` | `/opt/demo/settings.yaml` | yes | yes | Same type and target |
 | `cat /opt/demo/settings.yaml` | `read_inspect` | `settings.yaml` | yes | yes | Under the basename-permissive relative-suffix convention |
 | `cat /opt/demo/settings.yaml` | `read_inspect` | `/opt/demo` | yes | no | Parent is not child |
