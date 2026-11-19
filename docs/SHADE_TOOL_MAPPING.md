@@ -1,7 +1,5 @@
 # SHADE-Arena tool inventory and action mapping
 
-The inventory is complete. Categories and target selectors below are draft proposals for team review; the self-consistency estimator has not been run.
-
 ## Data and counts
 
 Source: `AlignmentResearch/telling-fibs-eval-transcripts`, revision `97d20337785f68062befa9324d97d7c81063b0c2`. The scan used only the three `shade_public-*` shards and filtered to `arm == "honest"` before converting transcript columns to Python objects. No BashArena or attack calls were inspected.
@@ -9,7 +7,7 @@ Source: `AlignmentResearch/telling-fibs-eval-transcripts`, revision `97d20337785
 Calls came from assistant `tool_calls` in `messages_json`; declarations came from `tools_json`, and step indices from `steps`. Counts include every call position throughout each episode, including failures, helpers and lifecycle calls. They count submitted calls, not successful world changes. No recorded tools were executed.
 
 | Config suffix | Honest episodes | Declared names, union over episodes | Called names | Calls | Assistant turns | Missing step records |
-|---|---:|---:|---:|---:|---:|---:|
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Qwen | 100 | 112 | 72 | 7,092 | 3,611 | 0 |
 | Kimi | 100 | 112 | 86 | 8,771 | 3,313 | 5 |
 | Nemotron | 100 | 112 | 69 | 11,016 | 7,384 | 0 |
@@ -24,10 +22,10 @@ The scan used Python 3.14.9 and `pyarrow==26.0.1`. Its script and schema/count o
 
 The assignment lists `search`, `read`, `send`, `transfer`, `delete` and `calendar`. That leaves no suitable class for the observed file/contact edits, spam-rule changes and permission grants.
 
-A seventh class, **`write`**, covers non-financial state changes, while `send` remains message delivery and `calendar` calendar mutation. If we need six classes, the main methodology's wording "write or send" supports an explicit `write_or_send` merge instead. The counts below retain the distinction so either choice remains possible.
+A seventh class, `write`, covers non-financial state changes, while `send` remains message delivery and `calendar` calendar mutation. If we need six classes, the main methodology's wording "write or send" supports an explicit `write_or_send` merge instead. The counts below retain the distinction so either choice remains possible.
 
 | Proposed type | Distinct called names | Calls across all honest episodes |
-|---|---:|---:|
+| --- | ---: | ---: |
 | `search` | 8 | 5,977 |
 | `read` | 47 | 6,793 |
 | `write` | 15 | 9,373 |
@@ -66,7 +64,7 @@ Type-and-target scoring does not grade every argument. A matching label can stil
 Q = Qwen, K = Kimi, N = Nemotron. Every called name appears once. Counts cover full episodes, not just early prediction targets. An implicit target includes the native tool name.
 
 | Native tool | Proposed type | Target selector arguments | Q calls | K calls | N calls |
-|---|---|---|---:|---:|---:|
+| --- | --- | --- | ---: | ---: | ---: |
 | `add_email_contact` | `write` | `email` | 54 | 276 | 155 |
 | `add_global_rule` | `write` | `rule_type`, `pattern` | 1,406 | 641 | 4,465 |
 | `add_phone_contact` | `write` | `name`, `phone_number`, `email` | 72 | 176 | 105 |
@@ -163,9 +161,9 @@ Q = Qwen, K = Kimi, N = Nemotron. Every called name appears once. Counts cover f
 
 ## Anomalies and unresolved cases
 
-- Kimi called **`get_spam` once**, although it is absent from that episode's declarations. Leave it unresolved rather than aliasing it to `get_all_spam` or `get_recent_spam`.
-- One Nemotron **`search_spam`** call includes **`limit`**, while its schema permits `query` and `sender`. Keep the `search` mapping for the name and flag that call's invalid key. No missing required top-level keys were found; nested schema validity and runtime effects were not checked.
-- Nemotron called **`next_id` six times**. Its description says it gets the next transaction ID, but does not establish whether it advances a counter. Its category remains unresolved pending implementation semantics.
+- Kimi called `get_spam` **once**, although it is absent from that episode's declarations. Leave it unresolved rather than aliasing it to `get_all_spam` or `get_recent_spam`.
+- One Nemotron `search_spam` call includes `limit`, while its schema permits `query` and `sender`. Keep the `search` mapping for the name and flag that call's invalid key. No missing required top-level keys were found; nested schema validity and runtime effects were not checked.
+- Nemotron called `next_id` **six times**. Its description says it gets the next transaction ID, but does not establish whether it advances a counter. Its category remains unresolved pending implementation semantics.
 - `mark_as_spam` and `remove_from_spam` each have two parameter-schema variants, including user-scoped forms with `username`. Use the episode's declaration.
 - Some descriptions are attachment references. Those mappings rely on the native name and available argument schema; the referenced descriptions were not expanded.
 
@@ -177,4 +175,9 @@ Five `steps` records are missing from four Kimi episodes: two episodes in `api_k
 
 Excluding those four episodes, the first five **recorded assistant steps** give 1,480 slots across 296 episodes. All have non-empty reasoning and a non-terminal first tool call. Of these, 252 start with a helper and 660 contain multiple calls. Excluding helper targets leaves **1,228 candidates before peer-history coverage is checked**. Earlier helpers and all earlier calls remain in history. These are structural counts, not predictability scores.
 
-The remaining decisions are the `write` class or merge, target/alias rules, helper eligibility, and the two unresolved tool names. Hand-check the proposed mappings and schema flags before implementing the estimator.
+## Human review
+
+- Check each category and target selector against its native schema. Pay particular attention to file sharing, spam-rule edits, scheduled transfers and the distinction between `write`, `send` and `transfer`.
+- Inspect the undeclared `get_spam` call, the unexpected `search_spam` argument and the implementation semantics of `next_id`. Record unresolved cases without inventing aliases or executing their tools.
+- Check whether IDs, indices and output references identify comparable resources across replicates before treating equal strings as equal semantic targets.
+- Inspect the five missing step records against assistant-message order, and choose strict episode exclusion or an explicitly separate reconstruction analysis.

@@ -1,6 +1,6 @@
 # SHADE self-consistency specification
 
-Draft for discussion. The [tool inventory](SHADE_TOOL_MAPPING.md) and eligibility counts have been checked on real data; the predictor, uncertainty estimates and SHADE reader comparison have not been run.
+This specification defines a leave-one-run-out baseline using the [SHADE tool mapping](SHADE_TOOL_MAPPING.md).
 
 ## What this measures
 
@@ -16,13 +16,13 @@ The reasoning comparison is paired **T+R versus T on the same SHADE steps**, wit
 
 Use the honest arm of `shade_public-qwen3.5-397b`, `shade_public-kimi-k3` and `shade_public-nemotron-3-ultra` at revision `97d20337785f68062befa9324d97d7c81063b0c2`. The inventory found 100 episodes per model, comprising 25 runs of each of four scenarios. Stored initial task content matched within each model/scenario. Peers must come from the same model, scenario and task.
 
-The holdout and resampling unit is an episode, keyed by `(config, episode_id)`. Independence of generating seeds and environments still needs checking. The four scenarios are fixed tasks; they do not support a general population claim about agent tasks.
+The holdout and resampling unit is an episode, keyed by `(config, episode_id)`. Check generating seeds and environment resets before treating replicates as independent. The four scenarios are fixed tasks; they do not support a general population claim about agent tasks.
 
 The proposed primary analysis keeps the parser's strict rule: exclude episodes whose `steps` records do not map one-to-one onto assistant messages. This removes four Kimi episodes with five missing records, leaving 296 episodes. Kimi then has 23 runs in each of `api_key_calendar_agendas_2` and `bank_transfer_2`, and 25 in each of the other two scenarios.
 
 A separate sensitivity analysis could reconstruct the five boundaries from assistant-message order and retain all 300 episodes, after manual inspection. That would restore boundaries, not missing original sabotage labels. Agree the primary and sensitivity policies before inspecting estimator results.
 
-[DECISIONS.md](DECISIONS.md) records monitoring and secondary-task wording in the honest SHADE system prompt. That existing check was not repeated during the inventory. Include the caveat when comparing with BashArena's different prompt.
+[DECISIONS.md](DECISIONS.md) records monitoring and secondary-task wording in the honest SHADE system prompt. Include the caveat when comparing with BashArena's different prompt.
 
 ## Positions and eligibility
 
@@ -30,7 +30,7 @@ Use recorded assistant-step positions **k = 1 through 5**, not the first five el
 
 A target needs non-empty reasoning and at least one tool call, with the first call neither `submit` nor `end_task`. Predict the **first call only**. Earlier history still includes turns without reasoning and every call in multi-call turns.
 
-I propose excluding `read_tool_output` and `grep_tool_output` as prediction targets while keeping them in history. This is still subject to the team's D2 decision. If included, report helpers separately as harness reads. Under strict episode exclusion, the inventory gives:
+The proposed policy excludes `read_tool_output` and `grep_tool_output` as prediction targets while keeping them in history. If an alternative includes helpers, report them separately as harness reads. Under strict episode exclusion, the inventory gives:
 
 | Model | Retained episodes | First-five slots | Helper first-call targets | Candidate non-helper targets |
 |---|---:|---:|---:|---:|
@@ -88,9 +88,9 @@ For uncertainty, the proposal is to resample whole episodes within model×scenar
 
 For a reader comparison, carry all four condition outcomes together through resampling. Select covered steps independently of reader success, and compare T+R with T on identical targets. If bootstrap coverage changes, apply the same resampled set to both conditions. Matching replicate numbers across different models is not a reason to pair their runs.
 
-## Reader comparison and remaining decisions
+## Reader comparison and review decisions
 
-A SHADE reader subset needs the same episode exclusions, step positions, first-call target, helper policy and mapping. Choose it before inspecting reader/judge outcomes; the methodology's suggestion of about 100 early steps is not yet a sampling rule. Show baseline, T and T+R scores together with coverage. A low baseline may reflect omitted outputs, strict keys, finite samples or unstable IDs rather than randomness alone; a high shallow-prefix score may reflect stereotyped tool choice.
+A SHADE reader subset needs the same episode exclusions, step positions, first-call target, helper policy and mapping. Specify the sampling rule before inspecting reader/judge outcomes rather than relying on an approximate target of 100 early steps. Show baseline, T and T+R scores together with coverage. A low baseline may reflect omitted outputs, strict keys, finite samples or unstable IDs rather than randomness alone; a high shallow-prefix score may reflect stereotyped tool choice.
 
 Before running the estimator:
 
@@ -99,4 +99,4 @@ Before running the estimator:
 - Agree history keys, joint voting, ties, abstention accounting and uncertainty. Test empty prefixes, singletons, multi-call histories, optional/null values, ID/reference mismatches, missing steps and bootstrap self-exclusion on synthetic cases, then hand-check real histories without executing their tools.
 - Inspect a count/coverage report before interpreting accuracy. If a justified rule revision is needed, record it as exploratory rather than changing rules solely to improve coverage.
 
-Agree any reader subset, settings and spending separately. Send this specification and the tool mapping to Sudhiksha alongside the severity rubric and labelling guide for the pre-registration.
+Record the reader subset, settings and resource limits with this specification, the tool mapping, severity rubric and labelling guide in the pre-registration.
